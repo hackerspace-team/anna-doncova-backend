@@ -1,13 +1,19 @@
 import asyncio
-from datetime import datetime
 from enum import Enum
-
 from rest_framework import generics, status
 from rest_framework.response import Response
+from telegram import Bot
 
-from .firebase import db
+from AnnaDoncovaBackend.settings import TELEGRAM_TOKEN, CHAT_IDS
+from app.bot.helpers import write_application
 from .seriallizers import PreRegisterSerializer
-from .telegram import send_message_to_admins
+
+
+async def send_message_to_admins(message):
+    bot = Bot(token=TELEGRAM_TOKEN)
+
+    for chat_id in CHAT_IDS:
+        await bot.send_message(chat_id=chat_id, text=message)
 
 
 class Application(Enum):
@@ -25,8 +31,6 @@ class PreRegisterView(generics.CreateAPIView):
         data = serializer.validated_data
         name, phone, email, activities = data['name'], data['phone'], data['email'], data['activities']
 
-        print(activities)
-
         message = (f"🚀 Новый клиент на курсах по нейросетям! 🚀\n\n"
                    f"👤 Имя: {name}\n"
                    f"📞 Телефон: {phone}\n"
@@ -35,14 +39,7 @@ class PreRegisterView(generics.CreateAPIView):
                    f"📄 Форма: Предзапись")
         asyncio.run(send_message_to_admins(message))
 
-        db.collection('applications').document().set({
-            'name': name,
-            'phone': phone,
-            'email': email,
-            'activities': activities,
-            'type': Application.PRE_REGISTER.name,
-            'createdDate': datetime.now(),
-        })
+        write_application(name, phone, email, activities, Application.PRE_REGISTER.value)
 
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

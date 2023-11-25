@@ -41,12 +41,12 @@ static/
 
 # Virtual environment (commonly "venv" or ".venv")
 venv/
+env/
 .env
-.env/
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
 AnnaDoncovaBackend/settings.py
-service_account_key.json
+service_account_key*.json
