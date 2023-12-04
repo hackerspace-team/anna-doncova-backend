@@ -31,7 +31,8 @@ class PreRegisterView(generics.CreateAPIView):
         data = serializer.validated_data
         name, phone, email, activities = data['name'], data['phone'], data['email'], data['activities']
 
-        message = (f"🚀 Новый клиент на курсах по нейросетям! 🚀\n\n"
+        message = (f"#application\n\n"
+                   f"🚀 Новый клиент на курсах по нейросетям! 🚀\n\n"
                    f"👤 Имя: {name}\n"
                    f"📞 Телефон: {phone}\n"
                    f"📧 Почта: {email}\n"

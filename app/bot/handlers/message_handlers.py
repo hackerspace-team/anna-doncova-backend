@@ -3,14 +3,14 @@ import time
 from telegram import Update, constants
 from telegram.ext import CallbackContext
 
-from app.bot.constants import PARSE_MODE, GPT3_DAILY_LIMIT_MESSAGES
+from app.bot.constants import PARSE_MODE
 from app.bot.features.chat import get_chat
 from app.bot.features.message import write_message, get_messages_by_chat_id
 from app.bot.features.user import get_user, update_user
 from app.bot.integrations.openAI import get_response_message
 from app.bot.locales.main import get_localization
 from app.bot.utilities import is_time_limit_exceeded, is_messages_limit_exceeded
-from app.models import Model, User
+from app.models import Model, User, UserQuota, UserSettings
 
 
 async def handle_chatgpt(update: Update, context: CallbackContext, user: User, current_time: float):
@@ -35,16 +35,20 @@ async def handle_chatgpt(update: Update, context: CallbackContext, user: User, c
     await update.message.chat.send_action(action=constants.ChatAction.TYPING)
 
     try:
-        response_message = get_response_message(user.current_model, history)
+        # response_message = get_response_message(user.current_model, history)
 
-        # role, content = ["assistant", "Hello! How can I assist you today?"]
-        role, content = response_message.role, response_message.content
+        role, content = ["assistant", "Hello! How can I assist you today?"]
+        # role, content = response_message.role, response_message.content
         await write_message(user.current_chat_id, role, "", content)
 
-        user.daily_limits["GPT3"] -= 1
-        await update_user(user.id, {"daily_limits": user.daily_limits})
+        user.monthly_limits[UserQuota.GPT3] -= 1
+        await update_user(user.id, {"monthly_limits": user.monthly_limits})
+
+        header_text = f'💬 {chat.title}\n\n' if user.settings[UserSettings.SHOW_NAME_OF_THE_CHAT] else ''
+        footer_text = f'\n\n✉️ {user.monthly_limits[UserQuota.GPT3] + 1}' \
+            if user.settings[UserSettings.SHOW_USAGE_QUOTA] else ''
         await update.message.reply_text(
-            f"💬 {chat.title}\n\n{content}\n\n✉️ {user.daily_limits['GPT3'] + 1}/{GPT3_DAILY_LIMIT_MESSAGES}",
+            f"{header_text}{content}{footer_text}",
             parse_mode=PARSE_MODE,
             reply_to_message_id=update.message.message_id,
         )
@@ -68,5 +72,5 @@ async def handle_message(update: Update, context: CallbackContext):
     if need_exit:
         return
 
-    if user.current_model == Model.GPT3.value:
+    if user.current_model == Model.GPT3:
         await handle_chatgpt(update, context, user, current_time)

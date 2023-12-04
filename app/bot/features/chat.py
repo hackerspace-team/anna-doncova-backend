@@ -23,7 +23,7 @@ async def get_chat_by_user_id(user_id: str) -> Optional[Chat]:
 
 async def create_chat_object(telegram_chat_id: str, title="New chat") -> Chat:
     chat_ref = db.collection('chats').document()
-    return Chat(id=chat_ref.id, telegram_chat_id=telegram_chat_id, title=title)
+    return Chat(id=chat_ref.id, telegram_chat_ids=[telegram_chat_id], title=title)
 
 
 async def write_chat_in_transaction(transaction, telegram_chat_id: str) -> Chat:
