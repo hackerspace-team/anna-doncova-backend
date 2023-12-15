@@ -22,7 +22,7 @@ from app.bot.handlers.command_handlers import (start,
                                                buy,
                                                chats)
 from app.bot.handlers.job_handlers import reset_monthly_limits
-from app.bot.handlers.message_handlers import handle_message
+from app.bot.handlers.message_handlers import handle_message, handle_photo, handle_video
 from app.bot.handlers.payment_handlers import pre_checkout, successful
 from app.bot.handlers.query_handlers import choose_button
 
@@ -57,6 +57,8 @@ async def main():
 
     # Common
     application.add_handler(CallbackQueryHandler(choose_button))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    application.add_handler(MessageHandler(filters.VIDEO, handle_video))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     job = application.job_queue.run_repeating(reset_monthly_limits, interval=86400, first=0)

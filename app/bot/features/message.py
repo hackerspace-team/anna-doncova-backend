@@ -13,7 +13,7 @@ async def get_message(message_id: str) -> Optional[Message]:
 
 
 async def get_messages_by_chat_id(chat_id: str) -> List[Message]:
-    messages_query = db.collection("messages").where("chat_id", "==", chat_id)
+    messages_query = db.collection("messages").where("chat_id", "==", chat_id).limit(10)
     messages = [Message(**message.to_dict()) async for message in messages_query.stream()]
 
     return messages
@@ -31,15 +31,15 @@ async def create_message_object(chat_id: str, sender: str, sender_id: str, conte
     )
 
 
-async def write_message_in_transaction(transaction, chat_id: str, sender: str, sender_id: str, content: str) -> Message:
+async def write_message(chat_id: str, sender: str, sender_id: str, content: str) -> Message:
     message = await create_message_object(chat_id, sender, sender_id, content)
-    transaction.set(db.collection('messages').document(message.id), message.to_dict())
+    await db.collection('messages').document(message.id).set(message.to_dict())
 
     return message
 
 
-async def write_message(chat_id: str, sender: str, sender_id: str, content: str) -> Message:
+async def write_message_in_transaction(transaction, chat_id: str, sender: str, sender_id: str, content: str) -> Message:
     message = await create_message_object(chat_id, sender, sender_id, content)
-    await db.collection('messages').document(message.id).set(message.to_dict())
+    transaction.set(db.collection('messages').document(message.id), message.to_dict())
 
     return message

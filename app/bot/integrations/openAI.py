@@ -24,3 +24,15 @@ def get_response_message(current_model: str, history: list):
     )
 
     return response.choices[0].message
+
+
+def get_response_image(prompt: str):
+    response = client.images.generate(
+        model=Model.DALLE3,
+        prompt=prompt,
+        size="1024x1024",
+        quality="standard",
+        n=1,
+    )
+
+    return response.data[0].url

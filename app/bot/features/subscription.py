@@ -1,4 +1,5 @@
 from typing import Optional, Dict
+from google.cloud.firestore import Query
 
 from app.firebase import db
 from app.models import Subscription, SubscriptionType, SubscriptionPeriod, SubscriptionStatus, Currency
@@ -12,11 +13,14 @@ async def get_subscription(subscription_id: str) -> Optional[Subscription]:
         return Subscription(**subscription.to_dict())
 
 
-async def get_subscription_by_user_id(user_id: str) -> Optional[Subscription]:
-    subscription_stream = db.collection("subscriptions").where("user_id", "==", user_id).limit(1).stream()
+async def get_last_subscription_by_user_id(user_id: str) -> Optional[Subscription]:
+    subscription_stream = db.collection("subscriptions") \
+        .where("user_id", "==", user_id) \
+        .order_by("created_at", direction=Query.DESCENDING) \
+        .limit(1) \
+        .stream()
     async for doc in subscription_stream:
         return Subscription(**doc.to_dict())
-    return None
 
 
 async def create_subscription_object(user_id: str,

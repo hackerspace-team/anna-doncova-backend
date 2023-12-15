@@ -24,7 +24,7 @@ class Model:
     GPT3 = 'gpt-3.5-turbo'
     GPT4 = 'gpt-4-1106-preview'
     DALLE3 = 'dall-e-3'
-    FaceSwap = 'face-swap'
+    Face_Swap = 'face-swap'
 
 
 class UserQuota:
@@ -46,7 +46,6 @@ class UserSettings:
 class UserGender:
     MALE = 'MALE'
     FEMALE = 'FEMALE'
-    OTHER = 'OTHER'
     UNSPECIFIED = 'UNSPECIFIED'
 
 
@@ -68,6 +67,56 @@ class SubscriptionStatus:
     WAITING = 'WAITING'
     FINISHED = 'FINISHED'
     ERROR = 'ERROR'
+
+
+class PackageType:
+    GPT3 = "GPT3"
+    GPT4 = "GPT4"
+    CHAT = "CHAT"
+    DALLE3 = "DALLE3"
+    FACE_SWAP = "FACE_SWAP"
+    ACCESS_TO_CATALOG = "ACCESS_TO_CATALOG"
+    VOICE_MESSAGES = "VOICE_MESSAGES"
+    FAST_MESSAGES = "FAST_MESSAGES"
+
+
+class Role:
+    PERSONAL_ASSISTANT = {
+        "name": "PERSONAL_ASSISTANT",
+        "description": "You are a helpful assistant.",
+    }
+    CREATIVE_WRITER = {
+        "name": "CREATIVE_WRITER",
+        "description": "You are a helpful creative writer."
+    }
+    LANGUAGE_TUTOR = {
+        "name": "LANGUAGE_TUTOR",
+        "description": "You are a helpful language tutor."
+    }
+    TECHNICAL_ADVISOR = {
+        "name": "TECHNICAL_ADVISOR",
+        "description": "You are a technical advisor.",
+    }
+
+
+class PackageStatus:
+    SUCCESS = 'SUCCESS'
+    WAITING = 'WAITING'
+    ERROR = 'ERROR'
+
+
+class FaceSwapPackageName:
+    CELEBRITIES = {
+        "name": "CELEBRITIES",
+        f"{UserGender.MALE}_files": [
+            '1_ElonMusk.jpeg',
+            '2_LeonardoDiCaprio.jpg'
+        ],
+        f"{UserGender.FEMALE}_files": [
+            '1_Beyonce.jpeg',
+            '2_EmmaWatson.jpeg'
+        ]
+    }
 
 
 class Currency:
@@ -211,23 +260,35 @@ class User:
         }
 
     @staticmethod
-    def get_quotas(subscription_type: SubscriptionType, additional_usage_quota):
-        limits = User.DEFAULT_MONTHLY_LIMITS[subscription_type]
-        quotas = {service: limits[service] + additional_usage_quota.get(service, 0) for service in limits}
-        quotas['additional_chats'] = additional_usage_quota['additional_chats']
+    def get_quotas(monthly_limits, additional_usage_quota):
+        quotas = {
+            service: monthly_limits[service] + additional_usage_quota.get(service, 0) for service in monthly_limits
+        }
+        quotas[UserQuota.ADDITIONAL_CHATS] = additional_usage_quota[UserQuota.ADDITIONAL_CHATS]
 
         return quotas
 
 
 class Chat:
     id: str
+    user_id: str
     telegram_chat_ids: List[str]
     title: str
+    role: Role
 
-    def __init__(self, id: str, telegram_chat_ids: List[str], title="New chat", created_at=None, edited_at=None):
+    def __init__(self,
+                 id: str,
+                 user_id: str,
+                 telegram_chat_ids: List[str],
+                 title="New chat",
+                 role=None,
+                 created_at=None,
+                 edited_at=None):
         self.id = str(id)
-        self.telegram_chat_id = [str(telegram_chat_id) for telegram_chat_id in telegram_chat_ids]
+        self.user_id = user_id
+        self.telegram_chat_ids = [str(telegram_chat_id) for telegram_chat_id in telegram_chat_ids]
         self.title = title
+        self.role = role if role is not None else Role.PERSONAL_ASSISTANT
 
         current_time = datetime.now()
         self.created_at = created_at if created_at is not None else current_time
@@ -236,8 +297,10 @@ class Chat:
     def to_dict(self):
         return {
             'id': self.id,
-            'telegram_chat_id': self.telegram_chat_id,
+            'user_id': self.user_id,
+            'telegram_chat_ids': self.telegram_chat_ids,
             'title': self.title,
+            'role': self.role,
             'created_at': self.created_at,
             'edited_at': self.edited_at
         }
@@ -296,7 +359,9 @@ class Subscription:
                  amount: float,
                  provider_payment_charge_id="",
                  start_date=None,
-                 end_date=None):
+                 end_date=None,
+                 created_at=None,
+                 edited_at=None):
         self.id = str(id)
         self.user_id = str(user_id)
         self.type = type
@@ -316,6 +381,10 @@ class Subscription:
         else:
             self.end_date = end_date
 
+        current_time = datetime.now()
+        self.created_at = created_at if created_at is not None else current_time
+        self.edited_at = edited_at if edited_at is not None else current_time
+
     def to_dict(self):
         return {
             'id': self.id,
@@ -327,7 +396,9 @@ class Subscription:
             'amount': self.amount,
             'provider_payment_charge_id': self.provider_payment_charge_id,
             'start_date': self.start_date,
-            'end_date': self.end_date
+            'end_date': self.end_date,
+            'created_at': self.created_at,
+            'edited_at': self.edited_at
         }
 
     @staticmethod
@@ -356,6 +427,7 @@ class Subscription:
     @staticmethod
     def get_emojis():
         return {
+            SubscriptionType.FREE: '',
             SubscriptionType.STANDARD: '⭐',
             SubscriptionType.VIP: '🔥',
             SubscriptionType.PLATINUM: '💎'
@@ -383,9 +455,135 @@ class Subscription:
         return int(price_with_discount)
 
 
-class Order:
+class Package:
     id: str
+    user_id: str
+    status: PackageStatus
+    type: PackageType
+    currency: Currency
+    amount: float
+    quantity: int
+    provider_payment_charge_id: str
+
+    def __init__(self,
+                 id: str,
+                 user_id: str,
+                 type: PackageType,
+                 status: PackageStatus,
+                 currency: Currency,
+                 amount: float,
+                 quantity: int,
+                 provider_payment_charge_id="",
+                 created_at=None,
+                 edited_at=None):
+        self.id = id
+        self.user_id = user_id
+        self.type = type
+        self.status = status
+        self.currency = currency
+        self.amount = amount
+        self.quantity = quantity
+        self.provider_payment_charge_id = provider_payment_charge_id
+
+        current_time = datetime.now()
+        self.created_at = created_at if created_at is not None else current_time
+        self.edited_at = edited_at if edited_at is not None else current_time
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'type': self.type,
+            'status': self.status,
+            'currency': self.currency,
+            'amount': self.amount,
+            'quantity': self.quantity,
+            'provider_payment_charge_id': self.provider_payment_charge_id,
+            'created_at': self.created_at,
+            'edited_at': self.edited_at
+        }
+
+    @staticmethod
+    def get_prices(currency: Currency):
+        prices = {
+            PackageType.GPT3: '',
+            PackageType.GPT4: '',
+            PackageType.CHAT: '',
+            PackageType.DALLE3: '',
+            PackageType.FACE_SWAP: '',
+            PackageType.ACCESS_TO_CATALOG: '',
+            PackageType.VOICE_MESSAGES: '',
+            PackageType.FAST_MESSAGES: '',
+        }
+
+        if currency == Currency.RUB:
+            prices[PackageType.GPT3] = '1₽'
+            prices[PackageType.GPT4] = '10₽'
+            prices[PackageType.CHAT] = '100₽'
+            prices[PackageType.DALLE3] = '10₽'
+            prices[PackageType.FACE_SWAP] = '15₽'
+            prices[PackageType.ACCESS_TO_CATALOG] = '1 000₽'
+            prices[PackageType.VOICE_MESSAGES] = '2 500₽'
+            prices[PackageType.FAST_MESSAGES] = '2 000₽'
+        elif currency == Currency.EUR:
+            prices[PackageType.GPT3] = '0.01€'
+            prices[PackageType.GPT4] = '0.1€'
+            prices[PackageType.CHAT] = '1€'
+            prices[PackageType.DALLE3] = '0.1€'
+            prices[PackageType.FACE_SWAP] = '0.15€'
+            prices[PackageType.ACCESS_TO_CATALOG] = '10€'
+            prices[PackageType.VOICE_MESSAGES] = '25€'
+            prices[PackageType.FAST_MESSAGES] = '20€'
+        else:
+            prices[PackageType.GPT3] = '$0.01'
+            prices[PackageType.GPT4] = '$0.1'
+            prices[PackageType.CHAT] = '$1'
+            prices[PackageType.DALLE3] = '$0.1'
+            prices[PackageType.FACE_SWAP] = '$0.15'
+            prices[PackageType.ACCESS_TO_CATALOG] = '$10'
+            prices[PackageType.VOICE_MESSAGES] = '$25'
+            prices[PackageType.FAST_MESSAGES] = '$20'
+
+        return prices
+
+    @staticmethod
+    def get_price(currency: Currency, package_type: PackageType, quantity: int):
+        prices = Package.get_prices(currency)
+        price_raw = prices[package_type]
+        price_clear = re.sub(r'[^\d.]', '', price_raw)
+        price = float(price_clear) if '.' in price_clear else int(price_clear)
+
+        return int(quantity * price)
 
 
-class OrderDetail:
+class FaceSwapPackage:
     id: str
+    user_id: str
+    name: str
+    used_images: List[str]
+
+    def __init__(self,
+                 id: str,
+                 user_id: str,
+                 name: str,
+                 used_images: List[str],
+                 created_at=None,
+                 edited_at=None):
+        self.id = id
+        self.user_id = user_id
+        self.name = name
+        self.used_images = used_images
+
+        current_time = datetime.now()
+        self.created_at = created_at if created_at is not None else current_time
+        self.edited_at = edited_at if edited_at is not None else current_time
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'name': self.name,
+            'used_images': self.used_images,
+            'created_at': self.created_at,
+            'edited_at': self.edited_at
+        }

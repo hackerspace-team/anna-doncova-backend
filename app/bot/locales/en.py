@@ -2,7 +2,8 @@ import random
 import re
 
 from app.bot.locales.texts import Texts
-from app.models import User, SubscriptionType, UserQuota, UserGender, Currency, SubscriptionPeriod, Subscription
+from app.models import User, SubscriptionType, UserQuota, UserGender, Currency, SubscriptionPeriod, Subscription, \
+    PackageType
 
 
 class English(Texts):
@@ -90,6 +91,9 @@ To change a model use /mode 😉
 """
     ALREADY_MAKE_REQUEST = "You've already made a request. Please wait ⚠️"
     READY_FOR_NEW_REQUEST = "You can ask the next request 😌"
+    IMAGE_SUCCESS = """
+✨ Here's your image creation! 🎨
+"""
 
     # Settings
     SETTINGS = "Settings:"
@@ -114,20 +118,148 @@ Your subscription is now as active as a caffeinated squirrel! 🐿️☕ Welcome
 Thank you for embarking on this fantastic journey with us! Let's make some magic happen! 🪄🌟
 """
 
+    # Package
+    GPT3_REQUESTS = "✉️ GPT3 requests"
+    GPT3_REQUESTS_DESCRIPTION = "Unleash the power of GPT 3 for witty chats, smart advice, and endless fun! 🤖✨"
+    GPT4_REQUESTS = "🧠 GPT4 requests"
+    GPT4_REQUESTS_DESCRIPTION = "Experience GPT4's advanced intelligence for deeper insights and groundbreaking conversations. 🧠🌟"
+    THEMATIC_CHATS = "💬 Thematic chats"
+    THEMATIC_CHATS_DESCRIPTION = "Turn ideas into art with DALLE3 – where your imagination becomes stunning visual reality! 🎨🌈"
+    DALLE3_REQUESTS = "🖼 DALLE3 images"
+    DALLE3_REQUESTS_DESCRIPTION = "Dive into topics you love with Thematic Chats, guided by AI in a world of tailored discussions. 📚🗨️"
+    FACE_SWAP_REQUESTS = "📷 Images with face replacement"
+    FACE_SWAP_REQUESTS_DESCRIPTION = "Enter the playful world of Face Swap for laughs and surprises in every image! 😂🔄"
+    ACCESS_TO_CATALOG = "🎭 Access to a roles catalog"
+    ACCESS_TO_CATALOG_DESCRIPTION = "Unlock a universe of specialized AI assistants with access to our exclusive catalog, where every role is tailored to fit your unique needs and tasks"
+    ANSWERS_AND_REQUESTS_WITH_VOICE_MESSAGES = "🎙 Answers and requests with voice messages"
+    ANSWERS_AND_REQUESTS_WITH_VOICE_MESSAGES_DESCRIPTION = "Experience the ease and convenience of voice communication with our AI: Send and receive voice messages for a more dynamic and expressive interaction"
+    FAST_ANSWERS = "⚡ Fast answers"
+    FAST_ANSWERS_DESCRIPTION = "Quick Messages feature offers lightning-fast, accurate AI responses, ensuring you're always a step ahead in communication"
+    MIN_ERROR = "Oops! It looks like the number entered is below our minimum threshold. Please enter a value that meets or exceeds the minimum required. Let's try that again! 🔄"
+    VALUE_ERROR = "Whoops! That doesn't seem like a number. 🤔 Could you please enter a numeric value? Let's give it another go! 🔢"
+    PACKAGE_SUCCESS = """
+🎉 Cha-Ching! Payment Success! 💳
+
+Your payment just zoomed through like a superhero! 🦸‍ You've successfully unlocked the awesome power of your chosen package. Get ready for a rollercoaster of AI fun and excitement! 🎢
+
+Remember, with great power comes great... well, you know how it goes. Let's make some magic happen! ✨🪄
+"""
+
+    # Catalog
+    CATALOG = """
+🎭 Step Right Up to Our Role Catalogue Extravaganza! 🌟
+
+Ever dreamt of having an AI sidekick specialized just for you? Our catalog is like a magical wardrobe, each role a unique outfit tailored for your adventures in AI land! 🧙‍♂️✨
+
+Choose from an array of AI personas, each with its own flair and expertise. Whether you need a brainstorm buddy, a creative muse, or a factual wizard, we've got them all!
+
+👉 Ready to meet your match? Just hit the button below and let the magic begin! 🎩👇
+"""
+    CATALOG_FORBIDDEN_ERROR = """
+🔒 Whoops! Looks like you've hit a VIP-only zone! 🌟
+
+You're just a click away from unlocking our treasure trove of AI roles, but it seems you don't have the golden key yet. No worries, though! You can grab it easily.
+
+🚀 Head over to /subscribe for some fantastic subscription options, or check out /buy if you're in the mood for some a la carte AI delights.
+
+Once you're all set up, our catalog of AI wonders will be waiting for you – your ticket to an extraordinary world of AI possibilities! 🎫✨
+"""
+    PERSONAL_ASSISTANT = "🤖 Personal assistant"
+    CREATIVE_WRITER = "🖋️ Creative writer"
+    LANGUAGE_TUTOR = "🗣️ Language tutor"
+    TECHNICAL_ADVISOR = "💻 Technical advisor"
+
+    # Chats
+    SHOW_CHATS = "Show chats"
+    CREATE_CHAT = "Create a new chat"
+    CREATE_CHAT_FORBIDDEN = """
+🚫 Oops!
+
+Looks like you've hit the limit for creating new chats. But don't worry, the world of endless chats is just a click away! 🌍✨
+
+Head over to /subscribe or /buy to unlock the power of multiple chats. More chats, more fun! 🎉
+"""
+    TYPE_CHAT_NAME = "Type your chat name"
+    SWITCH_CHAT = "Switch between chats"
+    SWITCH_CHAT_FORBIDDEN = """
+"🔄 Switching Gears? Hold That Thought! ⚙️
+
+You're currently in your one and only chat universe. It's a cozy place, but why not expand your horizons? 🌌
+
+To hop between multiple thematic chats, just get your pass from /subscribe or /buy. Let the chat-hopping begin! 🐇
+"""
+    DELETE_CHAT = "Delete a chat"
+    DELETE_CHAT_FORBIDDEN = """
+🗑️ Delete This Chat? That's Lonely Talk! 💬
+
+This is your sole chat kingdom, and a kingdom needs its king or queen! Deleting it would be like canceling your own party. 🎈
+
+How about adding more chats to your realm instead? Check out /subscribe or /buy to build your chat empire! 👑
+"""
+    DELETE_CHAT_SUCCESS = "🗑️ Chat Successfully Deleted! 🎉"
+
+    # Face swap
+    TELL_ME_YOUR_GENDER = "Tell me your gender:"
+    YOUR_GENDER = "Your gender:"
+    MALE = "Male 🚹"
+    FEMALE = "Female 🚺"
+    SEND_ME_YOUR_PICTURE = """
+📸 *Ready for a Photo Transformation? Here's How to Get Started!*
+
+👍 *Ideal Photo Guidelines*:
+- Clear, high-quality selfie.
+- Only one person should be in the selfie.
+
+👎 *Please Avoid These Types of Photos*:
+- Group photos.
+- Animals.
+- Children under 18 years.
+- Full body shots.
+- Nude or inappropriate images.
+- Sunglasses or any face-obscuring items.
+- Blurry, out-of-focus images.
+- Videos and animations.
+- Compressed or altered images.
+
+Once you've got the perfect shot, upload your photo and let the magic happen 🌟
+"""
+    CHOOSE_YOUR_PACKAGE = """
+🌟*Let's Get Creative with Your Photos!*
+
+*First step:* Choose Your Adventure! 🚀
+
+Ready? Let's dive into a world of imagination! 🌈 Just *select a package below* and start your photo adventure 👇
+    """
+    CELEBRITIES = "Celebrities ⭐️"
+    FACE_SWAP_MIN_ERROR = """
+🤨 *Hold on there, partner!*
+
+Looks like you're trying to request fewer than 1 image. In the world of creativity, we need at least 1 to get the ball rolling!
+
+🌟 *Tip*: Type a number greater than 0 to start the magic. Let's unleash those creative ideas!
+"""
+    FACE_SWAP_MAX_ERROR = """
+🚀 *Whoa, aiming high, I see!* But, uh-oh...
+
+You're asking for more images than we have.
+
+🧐 *How about this?* Let's try a number within the package limit!
+"""
+
+    ERROR = "I've got an error"
+    BACK = "Back ◀️"
     CLOSE = "Close 🚪"
+    EXIT = "Exit ❌"
 
     @staticmethod
     def profile(subscription_type: SubscriptionType,
                 gender: UserGender,
                 current_model: str,
+                monthly_limits,
                 additional_usage_quota) -> str:
-        emojis = {
-            SubscriptionType.STANDARD: '⭐',
-            SubscriptionType.VIP: '🔥',
-            SubscriptionType.PLATINUM: '💎'
-        }
+        emojis = Subscription.get_emojis()
 
-        quotas = User.get_quotas(subscription_type, additional_usage_quota)
+        quotas = User.get_quotas(monthly_limits, additional_usage_quota)
         gender_info = ""
         if gender == UserGender.MALE:
             gender_info = "Gender: Male 👕"
@@ -169,11 +301,7 @@ Pick your potion and hit the button below to subscribe:
 
     @staticmethod
     def choose_how_many_months_to_subscribe(subscription_type: SubscriptionType):
-        emojis = {
-            SubscriptionType.STANDARD: '⭐',
-            SubscriptionType.VIP: '🔥',
-            SubscriptionType.PLATINUM: '💎'
-        }
+        emojis = Subscription.get_emojis()
 
         return f"""
 You're choosing *{subscription_type}* {emojis[subscription_type]}
@@ -194,6 +322,76 @@ Please select the subscription period by clicking on the button:
         cycles = English.cycles_subscribe()
 
         return f"You're about to activate your subscription for {cycles[subscription_period]}."
+
+    # Package
+    @staticmethod
+    def buy():
+        return """
+🤖 Welcome to the AI Shopping Spree! 🛍
+
+Welcome to the shop zone, where each button tap unlocks a world of AI wonders!
+🧠 *ChatGPT3 & ChatGPT4*: Engage in deep, thought-provoking conversations. Your new AI buddies await!
+🎨 *DALLE-3 Magic*: Transform ideas into stunning visuals. It's like painting with AI!
+👤 *Face Swap Fun*: Play with identities in images. It's never been this exciting!
+🗣️ *Voice Messages*: Say it out loud! Chatting with AI has never sounded better.
+💬 *Thematic Chats*: Dive into specialized topics and explore dedicated chat realms.
+🎭 *Role Catalog Access*: Need a specific assistant? Browse our collection and find your perfect AI match.
+⚡ *Quick Messages*: Fast, efficient, and always on point. AI communication at lightning speed.
+
+Hit a button and embark on an extraordinary journey with AI! It's time to redefine what's possible. 🌌🛍️
+"""
+
+    @staticmethod
+    def choose_min(package_type: PackageType):
+        return f"""
+🚀 Fantastic!
+
+You've selected the {package_type} package
+🌟 Please type in the number of requests you'd like to go for
+"""
+
+    # Chats
+    @staticmethod
+    def chats(current_chat_name: str, total_chats: int, available_to_create_chats: int):
+        return f"""
+🗨️ *Current Chat: {current_chat_name}* 🌟
+
+Welcome to the dynamic world of AI-powered chats! Here's what you can do:
+
+- Create New Thematic Chats: Immerse yourself in focused discussions tailored to your interests.
+- Switch Between Chats: Effortlessly navigate through your different chat landscapes.
+- Delete Chats: Clean up by removing the chats you no longer need.
+
+📈 Total Chats: *{total_chats}* | Chats Available to Create: *{available_to_create_chats}*
+
+Ready to tailor your chat experience? Explore the options below and let the conversations begin! 🚀👇
+"""
+
+    # Face swap
+    @staticmethod
+    def choose_face_swap_package(name: str, available_images, total_images: int, used_images: int) -> str:
+        remain_images = total_images - used_images
+        return f"""
+*{name}*
+
+You've got a treasure trove of *{total_images} images* in your pack, ready to unleash your creativity! 🌟
+
+🌠 *Your available generations*: {available_images} images. Need more? Explore /buy and /subscribe!
+🔍 *Used so far*: {used_images} images. Wow, you're on a roll!
+🚀 *Remaining*: {remain_images} images. {'Looks like you have used them all' if remain_images == 0 else 'So much potential'}!
+
+👉 Want more? Type the number of new images to add or press the *Back* button to explore different exciting packages.
+"""
+
+    @staticmethod
+    def face_swap_package_forbidden(available_images: int):
+        return f"""
+🔔 *Oops, a little hiccup!* 🚧
+
+Looks like you've got only *{available_images} generations* left in your arsenal.
+
+💡 *Pro Tip*: Sometimes, less is more! Try a smaller number, or give /buy and /subscribe a whirl for unlimited possibilities!
+"""
 
     @staticmethod
     def wait_for_another_request(seconds: int) -> str:

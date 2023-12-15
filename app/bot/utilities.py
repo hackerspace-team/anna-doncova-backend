@@ -6,11 +6,14 @@ from telegram.ext import CallbackContext
 from app.bot.constants import LIMIT_BETWEEN_REQUESTS_SECONDS
 from app.bot.handlers.job_handlers import update_waiting_message
 from app.bot.locales.main import get_localization
-from app.models import User, UserQuota
+from app.models import User, UserQuota, UserSettings, Model
 
 
 async def is_time_limit_exceeded(update: Update, context: CallbackContext, user: User, current_time: float) -> bool:
-    if 'last_request_time' in context.user_data:
+    if user.settings[UserSettings.FAST_MESSAGES]:
+        return False
+
+    if 'last_request_time' in context.user_data and user.current_model != Model.Face_Swap:
         time_elapsed = current_time - context.user_data['last_request_time']
         if time_elapsed < LIMIT_BETWEEN_REQUESTS_SECONDS:
             remaining_time = int(LIMIT_BETWEEN_REQUESTS_SECONDS - time_elapsed)
@@ -43,10 +46,10 @@ async def is_time_limit_exceeded(update: Update, context: CallbackContext, user:
         return False
 
 
-async def is_messages_limit_exceeded(update: Update, user: User):
-    if user.monthly_limits[UserQuota.GPT3] < 1:
+async def is_messages_limit_exceeded(update: Update, user: User, user_quota: UserQuota):
+    if user.monthly_limits[user_quota] < 1 and user.additional_usage_quota[user_quota]:
         await update.message.reply_text(
-            "You've reached a daily limit",
+            f"You've reached a monthly limit in {user_quota}",
             reply_to_message_id=update.message.message_id
         )
         return True
