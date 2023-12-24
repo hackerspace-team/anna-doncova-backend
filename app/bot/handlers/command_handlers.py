@@ -3,15 +3,17 @@ from datetime import datetime
 from telegram import Update
 from telegram.ext import CallbackContext
 
+from AnnaDoncovaBackend.settings import ADMIN_CHAT_IDS
 from app.bot.constants import PARSE_MODE
 from app.bot.features.chat import get_chat_by_user_id, get_chats_by_user_id
 from app.bot.features.user import get_user, update_user
 from app.bot.helpers import create_user_and_chat
 from app.bot.keyboards import build_language_keyboard, build_mode_keyboard, build_settings_keyboard, \
-    build_subscriptions_keyboard, build_packages_keyboard, build_catalog_keyboard, build_chats_keyboard
+    build_subscriptions_keyboard, build_packages_keyboard, build_catalog_keyboard, build_chats_keyboard, \
+    build_feedback_keyboard, build_promo_code_keyboard, build_promo_code_admin_keyboard, build_profile_keyboard
 from app.bot.locales.main import get_localization
 from app.firebase import db, bucket
-from app.models import UserSettings, UserQuota
+from app.models.user import UserSettings, UserQuota
 
 
 async def start(update: Update, context: CallbackContext):
@@ -19,7 +21,7 @@ async def start(update: Update, context: CallbackContext):
     if not user:
         transaction = db.transaction()
         await create_user_and_chat(transaction, update.effective_user, str(update.message.chat_id))
-    elif update.message.chat_id not in user.telegram_chat_ids:
+    elif str(update.message.chat_id) not in user.telegram_chat_ids:
         user.telegram_chat_ids.append(str(update.message.chat_id))
         await update_user(user.id, {"telegram_chat_ids": user.telegram_chat_ids})
 
@@ -31,7 +33,23 @@ async def start(update: Update, context: CallbackContext):
 async def commands(update: Update, context: CallbackContext):
     user = await get_user(str(update.effective_user.id))
 
-    await update.message.reply_text(get_localization(user.language_code).COMMANDS, parse_mode=PARSE_MODE)
+    is_admin = update.message.chat_id in ADMIN_CHAT_IDS
+    admin_commands = get_localization(user.language_code).COMMANDS_ADMIN
+    additional_text = admin_commands if is_admin else ""
+
+    await update.message.reply_text(text=f"{get_localization(user.language_code).COMMANDS}{additional_text}",
+                                    parse_mode=PARSE_MODE)
+
+
+async def feedback(update: Update, context: CallbackContext):
+    user = await get_user(str(update.effective_user.id))
+
+    reply_markup = build_feedback_keyboard(user.language_code)
+    context.user_data['awaiting_feedback'] = True
+
+    await update.message.reply_text(text=get_localization(user.language_code).FEEDBACK,
+                                    reply_markup=reply_markup,
+                                    parse_mode=PARSE_MODE)
 
 
 async def language(update: Update, context: CallbackContext):
@@ -39,7 +57,7 @@ async def language(update: Update, context: CallbackContext):
 
     reply_markup = build_language_keyboard(language_code)
 
-    await update.message.reply_text(get_localization(language_code).LANGUAGE,
+    await update.message.reply_text(text=get_localization(language_code).LANGUAGE,
                                     reply_markup=reply_markup,
                                     parse_mode=PARSE_MODE)
 
@@ -79,8 +97,19 @@ async def profile(update: Update, context: CallbackContext):
                                                            user.current_model,
                                                            user.monthly_limits,
                                                            user.additional_usage_quota)
+    reply_markup = build_profile_keyboard(user.language_code)
 
-    await update.message.reply_text(message, parse_mode=PARSE_MODE)
+    photo = bucket.blob(f'users/{user.id}.jpeg')
+    if photo.exists():
+        photo_data = photo.download_as_string()
+        await update.message.reply_photo(photo=photo_data,
+                                         caption=message,
+                                         reply_markup=reply_markup,
+                                         parse_mode=PARSE_MODE)
+    else:
+        await update.message.reply_text(text=message,
+                                        reply_markup=reply_markup,
+                                        parse_mode=PARSE_MODE)
 
 
 async def settings(update: Update, context: CallbackContext):
@@ -147,3 +176,24 @@ async def chats(update: Update, context: CallbackContext):
     await update.message.reply_text(text=message,
                                     reply_markup=reply_markup,
                                     parse_mode=PARSE_MODE)
+
+
+async def promo_code(update: Update, context: CallbackContext):
+    user = await get_user(str(update.effective_user.id))
+
+    is_admin = update.message.chat_id in ADMIN_CHAT_IDS
+    if is_admin:
+        reply_markup = build_promo_code_admin_keyboard(user.language_code)
+        await update.message.reply_text(text=get_localization(user.language_code).PROMO_CODE_INFO_ADMIN,
+                                        reply_markup=reply_markup,
+                                        parse_mode=PARSE_MODE)
+    else:
+        context.user_data['awaiting_promo_code'] = True
+        reply_markup = build_promo_code_keyboard(user.language_code)
+        await update.message.reply_text(text=get_localization(user.language_code).PROMO_CODE_INFO,
+                                        reply_markup=reply_markup,
+                                        parse_mode=PARSE_MODE)
+
+
+async def statistics(update: Update, context: CallbackContext):
+    pass

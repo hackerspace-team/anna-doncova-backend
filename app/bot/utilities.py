@@ -1,16 +1,15 @@
-from datetime import datetime
-
 from telegram import Update
 from telegram.ext import CallbackContext
 
 from app.bot.constants import LIMIT_BETWEEN_REQUESTS_SECONDS
 from app.bot.handlers.job_handlers import update_waiting_message
 from app.bot.locales.main import get_localization
-from app.models import User, UserQuota, UserSettings, Model
+from app.models.common import Model
+from app.models.user import User, UserQuota
 
 
 async def is_time_limit_exceeded(update: Update, context: CallbackContext, user: User, current_time: float) -> bool:
-    if user.settings[UserSettings.FAST_MESSAGES]:
+    if user.additional_usage_quota[UserQuota.FAST_MESSAGES]:
         return False
 
     if 'last_request_time' in context.user_data and user.current_model != Model.Face_Swap:
@@ -55,3 +54,13 @@ async def is_messages_limit_exceeded(update: Update, user: User, user_quota: Use
         return True
 
     return False
+
+
+def is_awaiting_something(context: CallbackContext):
+    return (context.user_data.get('awaiting_quantity', False) or
+            context.user_data.get('awaiting_package', False) or
+            context.user_data.get('awaiting_chat', False) or
+            context.user_data.get('awaiting_feedback', False) or
+            context.user_data.get('awaiting_promo_code', False) or
+            context.user_data.get('awaiting_promo_code_name', False) or
+            context.user_data.get('awaiting_promo_code_date', False))

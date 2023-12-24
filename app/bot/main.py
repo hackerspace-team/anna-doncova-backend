@@ -20,9 +20,12 @@ from app.bot.handlers.command_handlers import (start,
                                                catalog,
                                                subscribe,
                                                buy,
-                                               chats)
+                                               chats,
+                                               feedback,
+                                               promo_code,
+                                               statistics)
 from app.bot.handlers.job_handlers import reset_monthly_limits
-from app.bot.handlers.message_handlers import handle_message, handle_photo, handle_video
+from app.bot.handlers.message_handlers import handle_message, handle_photo, handle_video, handle_voice
 from app.bot.handlers.payment_handlers import pre_checkout, successful
 from app.bot.handlers.query_handlers import choose_button
 
@@ -35,6 +38,7 @@ async def main():
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("commands", commands))
+    application.add_handler(CommandHandler("feedback", feedback))
 
     # Mode
     application.add_handler(CommandHandler("mode", mode))
@@ -48,6 +52,7 @@ async def main():
     # Payments
     application.add_handler(CommandHandler("subscribe", subscribe))
     application.add_handler(CommandHandler("buy", buy))
+    application.add_handler(CommandHandler("promo_code", promo_code))
     application.add_handler(PreCheckoutQueryHandler(pre_checkout))
     application.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful))
 
@@ -55,10 +60,14 @@ async def main():
     application.add_handler(CommandHandler("catalog", catalog))
     application.add_handler(CommandHandler("chats", chats))
 
+    # Admin
+    application.add_handler(CommandHandler("statistics", statistics))
+
     # Common
     application.add_handler(CallbackQueryHandler(choose_button))
     application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
     application.add_handler(MessageHandler(filters.VIDEO, handle_video))
+    application.add_handler(MessageHandler(filters.VOICE, handle_voice))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     job = application.job_queue.run_repeating(reset_monthly_limits, interval=86400, first=0)

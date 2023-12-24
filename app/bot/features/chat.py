@@ -2,7 +2,7 @@ from typing import Optional, Dict, List
 
 from app.bot.features.user import get_user
 from app.firebase import db
-from app.models import Chat
+from app.models.chat import Chat
 
 
 async def get_chat(chat_id: str) -> Optional[Chat]:

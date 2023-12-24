@@ -7,7 +7,9 @@ from AnnaDoncovaBackend import settings
 certificate_name = 'service_account_key_testing.json' if settings.IS_DEV else 'service_account_key.json'
 storage_name = 'anna-doncova-testing.appspot.com' if settings.IS_DEV else 'anna-doncova-production.appspot.com'
 
-cred = credentials.Certificate(os.path.join(settings.BASE_DIR, certificate_name))
+path_to_credentials = os.path.join(settings.BASE_DIR, certificate_name)
+os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = path_to_credentials
+cred = credentials.Certificate(path_to_credentials)
 default_app = firebase_admin.initialize_app(cred, {
     'storageBucket': storage_name,
 })

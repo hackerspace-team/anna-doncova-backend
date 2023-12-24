@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from app.firebase import db
-from app.models import Message
+from app.models.message import Message
 
 
 async def get_message(message_id: str) -> Optional[Message]:

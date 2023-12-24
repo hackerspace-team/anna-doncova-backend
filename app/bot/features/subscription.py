@@ -2,7 +2,8 @@ from typing import Optional, Dict
 from google.cloud.firestore import Query
 
 from app.firebase import db
-from app.models import Subscription, SubscriptionType, SubscriptionPeriod, SubscriptionStatus, Currency
+from app.models.common import Currency
+from app.models.subscription import Subscription, SubscriptionType, SubscriptionPeriod, SubscriptionStatus
 
 
 async def get_subscription(subscription_id: str) -> Optional[Subscription]:

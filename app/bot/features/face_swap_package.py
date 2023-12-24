@@ -1,7 +1,7 @@
 from typing import Optional, Dict, List
 
 from app.firebase import db
-from app.models import FaceSwapPackage, FaceSwapPackageName
+from app.models.face_swap_package import FaceSwapPackage
 
 
 async def get_face_swap_package(face_swap_package_id: str) -> Optional[FaceSwapPackage]:

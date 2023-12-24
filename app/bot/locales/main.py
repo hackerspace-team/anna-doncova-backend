@@ -1,10 +1,16 @@
 from typing import Dict, Type
 
-from . import en
+from . import en, ru
 from .texts import Texts
 
 localization_classes: Dict[str, Type[Texts]] = {
     'en': en.English,
+    'ru': ru.Russian
+}
+
+language_codes = {
+    'en': 'en-US',
+    'ru': 'ru-RU'
 }
 
 

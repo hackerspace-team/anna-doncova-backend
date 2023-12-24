@@ -1,15 +1,105 @@
-from typing import Protocol
+from typing import Protocol, TypedDict
 
-from app.models import SubscriptionType, UserGender, Currency, SubscriptionPeriod, PackageType
+from app.models.common import Currency
+from app.models.package import PackageType
+from app.models.subscription import SubscriptionType, SubscriptionPeriod
+from app.models.user import UserGender
+
+
+class Role(TypedDict):
+    name: str
+    description: str
+    instruction: str
 
 
 class Texts(Protocol):
     START: str
     COMMANDS: str
+    COMMANDS_ADMIN = """
+----------
+
+👨‍💻👩‍💻 *Команды для админа*:
+📊 /statistics - *Просмотр статистики*.
+"""
+
+    # Feedback
+    FEEDBACK: str
+    FEEDBACK_SUCCESS: str
+
+    # Profile
+    CHANGE_PHOTO: str
+    CHANGE_GENDER: str
 
     # Language
     LANGUAGE: str
     CHOOSE_LANGUAGE: str
+
+    # Promo code
+    PROMO_CODE_INFO: str
+    PROMO_CODE_INFO_ADMIN = """
+🔑 *Время создать магию с промокодами!* ✨
+
+Выбери, для чего ты хочешь создать промокод:
+🌠 *Подписка* - открой доступ к эксклюзивным функциям и контенту.
+🎨 *Пакет* - добавь специальные возможности для использования AI.
+
+Нажми на нужную кнопку и приступим к созданию! 🚀
+"""
+    PROMO_CODE_SUCCESS: str
+    PROMO_CODE_SUCCESS_ADMIN = """
+🌟 Вау!
+
+Твой *промокод успешно создан* и готов к путешествию в карманы наших пользователей. 🚀
+Этот маленький кодик обязательно принесёт радость кому-то там!
+
+🎉 Поздравляю, ты настоящий волшебник промокодов!
+"""
+    PROMO_CODE_CHOOSE_SUBSCRIPTION_ADMIN = """
+🌟 *Выбираем подписку для промокода!* 🎁
+
+Выбери тип подписки, на который хочешь дать доступ:
+- *STANDARD* ⭐
+- *VIP* 🔥
+- *PLATINUM* 💎
+
+Выбери и нажми, чтобы создать волшебный ключ доступа! ✨
+"""
+    PROMO_CODE_CHOOSE_PACKAGE_ADMIN = """
+TODO
+"""
+    PROMO_CODE_CHOOSE_NAME_ADMIN = """
+🖋️ *Придумай название для промокода* ✨
+
+Сейчас ты как настоящий волшебник, создающий заклинание! ✨🧙‍
+Напиши уникальное и запоминающееся название для твоего промокода.
+
+🔠 Используй буквы, цифры, но помни о волшебстве краткости. Не бойся экспериментировать и вдохновлять пользователей!
+"""
+    PROMO_CODE_CHOOSE_DATE = """
+📅 *Время для волшебства!* 🪄
+
+Введи дату, до которой этот промокод будет разносить счастье и удивление!
+Помни, нужен формат ДД.ММ.ГГГГ, например, 25.12.2023 - идеально для Рождественского сюрприза! 🎄
+
+Так что вперёд, выбирай дату, когда магия закончится 🌟
+"""
+    PROMO_CODE_NAME_EXISTS_ERROR = """
+🚫 *Ой-ой, такой код уже существует!* 🤖
+
+Как настоящий инноватор, ты создал код, который уже кто-то придумал! Нужно что-то ещё более уникальное. Попробуй снова, ведь в творчестве нет границ!
+
+Покажи свою оригинальность и креативность. Уверен, на этот раз получится!
+"""
+    PROMO_CODE_DATE_VALUE_ERROR = """
+🚫 Упс!
+
+Кажется, дата заблудилась в календаре и не может найти свой формат 📅
+
+Давай попробуем ещё раз, но на этот раз в формате ДД.ММ.ГГГГ, например, 25.12.2023. Точность — залог успеха!
+"""
+    PROMO_CODE_EXPIRED_ERROR: str
+    PROMO_CODE_NOT_FOUND_ERROR: str
+    PROMO_CODE_ALREADY_USED_ERROR: str
 
     # AI
     MODE: str
@@ -24,6 +114,9 @@ class Texts(Protocol):
     SHOW_USAGE_QUOTA_IN_MESSAGES: str
     TURN_ON_VOICE_MESSAGES_FROM_RESPONDS: str
 
+    # Voice
+    VOICE_MESSAGES_FORBIDDEN: str
+
     # Subscription
     MONTH_1: str
     MONTHS_3: str
@@ -31,6 +124,8 @@ class Texts(Protocol):
     DISCOUNT: str
     NO_DISCOUNT: str
     SUBSCRIPTION_SUCCESS: str
+    SUBSCRIPTION_RESET: str
+    SUBSCRIPTION_END: str
 
     # Package
     GPT3_REQUESTS: str
@@ -56,10 +151,18 @@ class Texts(Protocol):
     # Catalog
     CATALOG: str
     CATALOG_FORBIDDEN_ERROR: str
-    PERSONAL_ASSISTANT: str
-    CREATIVE_WRITER: str
-    LANGUAGE_TUTOR: str
-    TECHNICAL_ADVISOR: str
+    PERSONAL_ASSISTANT: Role
+    TUTOR: Role
+    LANGUAGE_TUTOR: Role
+    CREATIVE_WRITER: Role
+    TECHNICAL_ADVISOR: Role
+    MARKETER: Role
+    SMM_SPECIALIST: Role
+    CONTENT_SPECIALIST: Role
+    DESIGNER: Role
+    SOCIAL_MEDIA_PRODUCER: Role
+    LIFE_COACH: Role
+    ENTREPRENEUR: Role
 
     # Chats
     SHOW_CHATS: str

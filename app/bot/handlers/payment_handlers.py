@@ -8,7 +8,8 @@ from app.bot.features.user import get_user
 from app.bot.helpers import create_subscription, create_package
 from app.bot.locales.main import get_localization
 from app.firebase import db
-from app.models import SubscriptionStatus, PackageStatus
+from app.models.package import PackageStatus
+from app.models.subscription import SubscriptionStatus
 
 
 async def pre_checkout(update: Update, context: CallbackContext):

@@ -13,25 +13,118 @@ from app.bot.keyboards import (build_period_of_subscription_keyboard,
                                build_quantity_of_packages_keyboard,
                                build_create_chat_keyboard,
                                build_switch_chat_keyboard,
-                               build_delete_chat_keyboard, build_face_swap_package_keyboard,
-                               build_face_swap_choose_keyboard)
+                               build_delete_chat_keyboard,
+                               build_face_swap_package_keyboard,
+                               build_face_swap_choose_keyboard, build_promo_code_admin_subscription_keyboard,
+                               build_promo_code_admin_packages_keyboard,
+                               build_promo_code_admin_period_of_subscription_keyboard,
+                               build_promo_code_admin_name_keyboard, build_gender_keyboard)
 from app.bot.locales.main import get_localization
-from app.models import (SubscriptionType,
-                        SubscriptionPeriod,
-                        Subscription,
-                        PackageType,
-                        Package,
-                        Role,
-                        UserQuota,
-                        Model,
-                        UserGender,
-                        FaceSwapPackageName)
+from app.firebase import bucket
+from app.models.common import Model
+from app.models.face_swap_package import FaceSwapPackageName
+from app.models.package import Package, PackageType
+from app.models.promo_code import PromoCodeType
+from app.models.subscription import Subscription, SubscriptionType, SubscriptionPeriod
+from app.models.user import UserQuota, UserGender
+
+
+async def handle_feedback_selection(query: CallbackQuery, value: str, context: CallbackContext):
+    if value == 'exit':
+        context.user_data['awaiting_feedback'] = False
+        await query.delete_message()
 
 
 async def handle_language_selection(query: CallbackQuery, chosen_language: str):
     await update_user(str(query.from_user.id), {"language_code": chosen_language})
 
-    await query.edit_message_text(text=get_localization(chosen_language).CHOOSE_LANGUAGE, parse_mode=PARSE_MODE)
+    await query.edit_message_text(text=get_localization(chosen_language).CHOOSE_LANGUAGE,
+                                  parse_mode=PARSE_MODE)
+
+
+async def handle_promo_code_selection(query: CallbackQuery, value: str, context: CallbackContext):
+    if value == 'exit':
+        context.user_data['awaiting_promo_code'] = False
+
+        await query.delete_message()
+
+
+async def handle_promo_code_admin_selection(query: CallbackQuery, promo_code_type: str):
+    user = await get_user(str(query.from_user.id))
+
+    if promo_code_type == 'subscription':
+        photo = bucket.blob(f'subscriptions/{user.language_code}_{user.currency}.png')
+        photo_data = photo.download_as_string()
+        caption = get_localization(user.language_code).PROMO_CODE_CHOOSE_SUBSCRIPTION_ADMIN
+        reply_markup = build_promo_code_admin_subscription_keyboard(user.language_code)
+        await query.message.reply_photo(photo=photo_data,
+                                        caption=caption,
+                                        reply_markup=reply_markup,
+                                        parse_mode=PARSE_MODE)
+    elif promo_code_type == 'package':
+        photo = bucket.blob(f'packages/{user.language_code}_{user.currency}.png')
+        photo_data = photo.download_as_string()
+        caption = get_localization(user.language_code).PROMO_CODE_CHOOSE_PACKAGE_ADMIN
+        reply_markup = build_promo_code_admin_packages_keyboard(user.language_code)
+        await query.message.reply_photo(photo=photo_data,
+                                        caption=caption,
+                                        reply_markup=reply_markup,
+                                        parse_mode=PARSE_MODE)
+
+    await query.delete_message()
+
+
+async def handle_promo_code_admin_subscription_selection(query: CallbackQuery, subscription_type: SubscriptionType):
+    language_code = (await get_user(str(query.from_user.id))).language_code
+
+    message = get_localization(language_code).choose_how_many_months_to_subscribe(subscription_type)
+    reply_markup = build_promo_code_admin_period_of_subscription_keyboard(language_code, subscription_type)
+
+    await query.edit_message_caption(caption=message, reply_markup=reply_markup, parse_mode=PARSE_MODE)
+
+
+async def handle_promo_code_admin_period_of_subscription_selection(query: CallbackQuery,
+                                                                   subscription_type: SubscriptionType,
+                                                                   subscription_period: SubscriptionPeriod,
+                                                                   context: CallbackContext):
+    user = await get_user(str(query.from_user.id))
+
+    context.user_data['awaiting_promo_code_name'] = True
+    context.user_data['promo_code_type'] = PromoCodeType.SUBSCRIPTION
+    context.user_data['promo_code_subscription_type'] = subscription_type
+    context.user_data['promo_code_subscription_period'] = subscription_period
+
+    reply_markup = build_promo_code_admin_name_keyboard(user.language_code)
+
+    await query.edit_message_caption(
+        caption=get_localization(user.language_code).PROMO_CODE_CHOOSE_NAME_ADMIN,
+        reply_markup=reply_markup,
+        parse_mode=PARSE_MODE
+    )
+
+
+async def handle_promo_code_admin_name_selection(query: CallbackQuery,
+                                                 value: str,
+                                                 context: CallbackContext):
+    if value == 'exit':
+        context.user_data['awaiting_promo_code_name'] = False
+        context.user_data['promo_code_type'] = False
+        context.user_data['promo_code_subscription_type'] = False
+        context.user_data['promo_code_subscription_period'] = False
+
+        await query.delete_message()
+
+
+async def handle_promo_code_admin_date_selection(query: CallbackQuery,
+                                                 value: str,
+                                                 context: CallbackContext):
+    if value == 'exit':
+        context.user_data['awaiting_promo_code_date'] = False
+        context.user_data['promo_code_type'] = False
+        context.user_data['promo_code_subscription_type'] = False
+        context.user_data['promo_code_subscription_period'] = False
+
+        await query.delete_message()
 
 
 async def handle_mode_selection(query: CallbackQuery, mode: str, context: CallbackContext):
@@ -62,6 +155,24 @@ async def handle_mode_selection(query: CallbackQuery, mode: str, context: Callba
         user = await get_user(str(query.from_user.id))
 
         await handle_face_swap(query.message, context, user)
+
+
+async def handle_profile_selection(query: CallbackQuery, action: str, context: CallbackContext):
+    user = await get_user(str(query.from_user.id))
+
+    if action == 'exit':
+        context.user_data['awaiting_photo'] = False
+
+        await query.delete_message()
+    elif action == 'change_photo':
+        await query.message.reply_text(text=get_localization(user.language_code).SEND_ME_YOUR_PICTURE,
+                                       parse_mode=PARSE_MODE)
+        context.user_data['awaiting_photo'] = True
+    elif action == 'change_gender':
+        reply_markup = build_gender_keyboard(user.language_code)
+        await query.message.reply_text(text=get_localization(user.language_code).TELL_ME_YOUR_GENDER,
+                                       reply_markup=reply_markup,
+                                       parse_mode=PARSE_MODE)
 
 
 async def handle_setting_selection(query: CallbackQuery, setting: str):
@@ -211,15 +322,15 @@ async def handle_catalog_selection(query: CallbackQuery, role_name: str):
 
     if keyboard_changed:
         current_chat = await get_chat_by_user_id(user.id)
-        role_description = getattr(Role, role_name)["description"]
         await update_chat(current_chat.id, {
-            "role": {
-                "name": role_name,
-                "description": role_description,
-            },
+            "role": role_name,
             "edited_at": datetime.now()
         })
         await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(new_keyboard))
+
+        message = getattr(get_localization(user.language_code), role_name)["description"]
+        await query.message.reply_text(text=message,
+                                       parse_mode=PARSE_MODE)
 
 
 async def handle_chat_selection(query: CallbackQuery, action: str, context: CallbackContext):
@@ -297,7 +408,7 @@ async def handle_delete_chat_selection(query: CallbackQuery, chat_id: str):
     )
 
 
-async def handle_face_swap_gender_selection(query: CallbackQuery, gender: UserGender, context: CallbackContext):
+async def handle_gender_selection(query: CallbackQuery, gender: UserGender, context: CallbackContext):
     user = await get_user(str(query.from_user.id))
     user.gender = gender
 
@@ -312,7 +423,8 @@ async def handle_face_swap_gender_selection(query: CallbackQuery, gender: UserGe
         f"{text_your_gender} {text_gender_male if user.gender == UserGender.MALE else text_gender_female}"
     )
 
-    await handle_face_swap(query.message, context, user)
+    if user.current_model == Model.Face_Swap:
+        await handle_face_swap(query.message, context, user)
 
 
 async def handle_face_swap_choose_selection(query: CallbackQuery, package_name: str, context: CallbackContext):
@@ -364,10 +476,32 @@ async def choose_button(update: Update, context: CallbackContext):
 
     if value == 'close':
         await query.message.delete()
+    elif command == 'feedback':
+        await handle_feedback_selection(query, value, context)
     elif command == 'language':
         await handle_language_selection(query, value)
+    elif command == 'promo_code':
+        await handle_promo_code_selection(query, value, context)
+    elif command == 'promo_code_admin':
+        await handle_promo_code_admin_selection(query, value)
+    elif command == 'promo_code_admin_subscription':
+        await handle_promo_code_admin_subscription_selection(query, value)
+    elif command == 'promo_code_admin_period_of_subscription':
+        subscription_period, subscription_type = value.split(':')
+        await handle_promo_code_admin_period_of_subscription_selection(query,
+                                                                       subscription_type,
+                                                                       subscription_period,
+                                                                       context)
+    elif command == 'promo_code_admin_name':
+        await handle_promo_code_admin_name_selection(query, value, context)
+    elif command == 'promo_code_admin_date':
+        await handle_promo_code_admin_date_selection(query, value, context)
     elif command == 'mode':
         await handle_mode_selection(query, value, context)
+    elif command == 'profile':
+        await handle_profile_selection(query, value, context)
+    elif command == 'gender':
+        await handle_gender_selection(query, value, context)
     elif command == 'setting':
         await handle_setting_selection(query, value)
     elif command == 'subscription':
@@ -389,8 +523,6 @@ async def choose_button(update: Update, context: CallbackContext):
         await handle_switch_chat_selection(query, value)
     elif command == 'delete_chat':
         await handle_delete_chat_selection(query, value)
-    elif command == 'face_swap_gender':
-        await handle_face_swap_gender_selection(query, value, context)
     elif command == 'face_swap_choose':
         await handle_face_swap_choose_selection(query, value, context)
     elif command == 'face_swap_package':

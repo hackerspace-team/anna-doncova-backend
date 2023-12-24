@@ -1,9 +1,10 @@
 import random
-import re
 
 from app.bot.locales.texts import Texts
-from app.models import User, SubscriptionType, UserQuota, UserGender, Currency, SubscriptionPeriod, Subscription, \
-    PackageType
+from app.models.common import Currency
+from app.models.package import PackageType
+from app.models.subscription import Subscription, SubscriptionType, SubscriptionPeriod
+from app.models.user import User, UserGender, UserQuota
 
 
 class English(Texts):
@@ -33,19 +34,92 @@ Let AI be your co-pilot in this adventure! 🚀
 🤖 Here's what you can explore:
 
 🚀 /start - *About me*
-🌐 /language - Engage with any language, ***set system messages*.
+🌐 /language - Engage with any language, *set system messages*.
 🧠 /mode - *Swap neural network models* on the fly with — *ChatGPT3*, *ChatGPT4*, *DALLE-3*, or *Face Swap*!
 📜 /info - Curious about what each model can do? Here you'll find all the answers.
 💼 /profile - *Check your profile* to see your usage quota and more.
 🔧 /settings - *Customize your experience* for a seamless user experience.
 💳 /subscribe or /buy - *Learn about our plans and perks* or opt for individual packages.
+🎁 /promo\\_code - Unleash exclusive AI features and special offers with your promo code.
 🎭 /catalog - *Pick a specialized assistant* for tasks tailored just for you.
 💬 /chats - *Create, switch, or delete context-specific chats*.
 
 Just type away or use a command to begin your AI journey! 🌟
 """
+    FEEDBACK = """
+🌟 *Your opinion matters!* 🌟
+
+Hey there! We're always looking to improve and your feedback is like gold dust to us. 💬✨
+- Love something about our bot? Let us know!
+- Got a feature request? We're all ears!
+- Something bugging you? We're here to squash those bugs. 🐞
+Just type your thoughts and hit send. It's that simple! Your insights help us grow and get better every day.
+
+And remember, every piece of feedback is a step towards making our bot even more awesome. Can't wait to hear from you! 💌
+"""
+    FEEDBACK_SUCCESS = """
+🌟 *Feedback Received!* 🌟
+
+Thank you for sharing your thoughts! 💌
+Your input is the secret sauce to our success. We're cooking up some improvements and your feedback is the key ingredient. 🍳🔑
+
+Keep an eye out for updates and new features, all inspired by you. Until then, happy chatting! 🚀
+
+Your opinion matters a lot to us! 💖
+"""
+
+    # Profile
+    CHANGE_PHOTO = "Change photo 📷"
+    CHANGE_GENDER = "Change gender 🚹🚺"
+
+    # Language
     LANGUAGE = "Language:"
     CHOOSE_LANGUAGE = "Selected language: English 🇺🇸"
+
+    # Promo code
+    PROMO_CODE_INFO = """
+🔓 *Unlock the world of AI wonders with your secret code!* 🌟
+
+If you've got a *promo code*, just type it in to reveal hidden features and special surprises. 🎁
+
+*No code?* No problem! Simply click 'Exit' to continue exploring the AI universe without it. 🚀
+"""
+    PROMO_CODE_SUCCESS = """
+🎉 *Woohoo! You've Struck Gold!* 🌟
+
+Your promo code has been successfully activated! Get ready to dive into a world of AI wonders with your shiny new perks. 🚀
+
+Thanks for joining us on this AI-powered adventure. Enjoy the extra goodies and let's make some magic together! ✨
+
+Happy exploring! 🤖🌐
+"""
+    PROMO_CODE_EXPIRED_ERROR = """
+🕒 *Whoops, Time's Up on This Promo Code!*
+
+Looks like this promo code has hit its expiration date. 📆 It's like a Cinderella story, but without the glass slipper. 🥿
+
+But hey, don't lose heart! You can still explore our other magical offers with /subscribe or /buy. There's always something exciting waiting for you in our AI wonderland! 🎩✨
+
+Stay curious and let the AI adventure continue! 🌟🚀
+"""
+    PROMO_CODE_NOT_FOUND_ERROR = """
+🔍 *Oops, Promo Code Not Found!*
+
+It seems like the promo code you entered is playing hide and seek with us. 🕵️‍♂️ We couldn't find it in our system.
+
+🤔 Double-check for any typos and give it another go. If it's still a no-show, maybe it's time to hunt for another code or check out our /subscribe and /buy options for some neat deals 🛍️
+
+Keep your spirits high, and let's keep the AI fun rolling! 🚀🎈
+"""
+    PROMO_CODE_ALREADY_USED_ERROR = """
+🚫 *Oops, déjà vu!*
+
+Looks like you've already used this promo code. It's a one-time magic spell, and it seems you've already cast it! ✨🧙
+
+No worries, though! You can check out our latest offers with /subscribe or /buy. There's always a new trick up our AI sleeve! 🎉🔮
+
+Keep exploring and let the AI surprises continue! 🤖
+"""
 
     # AI
     MODE = "Mode:"
@@ -91,15 +165,22 @@ To change a model use /mode 😉
 """
     ALREADY_MAKE_REQUEST = "You've already made a request. Please wait ⚠️"
     READY_FOR_NEW_REQUEST = "You can ask the next request 😌"
-    IMAGE_SUCCESS = """
-✨ Here's your image creation! 🎨
-"""
+    IMAGE_SUCCESS = "✨ Here's your image creation! 🎨"
 
     # Settings
     SETTINGS = "Settings:"
     SHOW_NAME_OF_THE_CHAT = "Show name of the chat"
     SHOW_USAGE_QUOTA_IN_MESSAGES = "Show usage quota in messages"
     TURN_ON_VOICE_MESSAGES_FROM_RESPONDS = "Turn on voice messages from responds"
+
+    # Voice
+    VOICE_MESSAGES_FORBIDDEN = """
+🎙 *Oops! Seems like your voice went into the AI void!*
+
+To unlock the magic of voice-to-text, simply wave your wand with /subscribe or /buy.
+
+Let's turn those voice messages into text and keep the conversation flowing! 🌟🔮
+"""
 
     # Subscription
     MONTH_1 = "1 month"
@@ -108,7 +189,7 @@ To change a model use /mode 😉
     DISCOUNT = "Discount"
     NO_DISCOUNT = "No discount"
     SUBSCRIPTION_SUCCESS = """
-🎉 Hooray! You're All Set! 🚀
+🎉 *Hooray! You're All Set!* 🚀
 
 Your subscription is now as active as a caffeinated squirrel! 🐿️☕ Welcome to the club of awesomeness. Here's what's going to happen next:
 - A world of possibilities just opened up. 🌍✨
@@ -117,6 +198,24 @@ Your subscription is now as active as a caffeinated squirrel! 🐿️☕ Welcome
 
 Thank you for embarking on this fantastic journey with us! Let's make some magic happen! 🪄🌟
 """
+    SUBSCRIPTION_RESET = """
+🚀 *Subscription Quota Refreshed!*
+
+Hello there, fellow AI adventurer! 🌟
+Guess what? Your subscription quota has just been topped up! It's like a magic refill, but better because it's real. 🧙‍♂️
+You've got a whole new month of AI-powered fun ahead of you. Chat, create, explore – the sky's the limit! ✨
+
+Keep unleashing the power of AI and remember, we're here to make your digital dreams come true. Let's rock this month! 🤖💥
+"""
+    SUBSCRIPTION_END = """
+🛑 *Subscription expired!*
+
+Hey there, AI enthusiast! 🌟
+Your subscription has come to an end. But don't worry, the AI journey isn't over yet! 🚀
+You can renew your magic pass with /subscribe to keep exploring the AI universe. Or, if you prefer, take a peek at /buy for some tailor-made individual packages. 🎁
+
+The AI adventure awaits! Recharge, regroup, and let's continue this exciting journey together. 🤖✨
+"""
 
     # Package
     GPT3_REQUESTS = "✉️ GPT3 requests"
@@ -124,9 +223,9 @@ Thank you for embarking on this fantastic journey with us! Let's make some magic
     GPT4_REQUESTS = "🧠 GPT4 requests"
     GPT4_REQUESTS_DESCRIPTION = "Experience GPT4's advanced intelligence for deeper insights and groundbreaking conversations. 🧠🌟"
     THEMATIC_CHATS = "💬 Thematic chats"
-    THEMATIC_CHATS_DESCRIPTION = "Turn ideas into art with DALLE3 – where your imagination becomes stunning visual reality! 🎨🌈"
+    THEMATIC_CHATS_DESCRIPTION = "Dive into topics you love with Thematic Chats, guided by AI in a world of tailored discussions. 📚🗨️"
     DALLE3_REQUESTS = "🖼 DALLE3 images"
-    DALLE3_REQUESTS_DESCRIPTION = "Dive into topics you love with Thematic Chats, guided by AI in a world of tailored discussions. 📚🗨️"
+    DALLE3_REQUESTS_DESCRIPTION = "Turn ideas into art with DALLE3 – where your imagination becomes stunning visual reality! 🎨🌈"
     FACE_SWAP_REQUESTS = "📷 Images with face replacement"
     FACE_SWAP_REQUESTS_DESCRIPTION = "Enter the playful world of Face Swap for laughs and surprises in every image! 😂🔄"
     ACCESS_TO_CATALOG = "🎭 Access to a roles catalog"
@@ -138,7 +237,7 @@ Thank you for embarking on this fantastic journey with us! Let's make some magic
     MIN_ERROR = "Oops! It looks like the number entered is below our minimum threshold. Please enter a value that meets or exceeds the minimum required. Let's try that again! 🔄"
     VALUE_ERROR = "Whoops! That doesn't seem like a number. 🤔 Could you please enter a numeric value? Let's give it another go! 🔢"
     PACKAGE_SUCCESS = """
-🎉 Cha-Ching! Payment Success! 💳
+🎉 *Cha-Ching! Payment Success!* 💳
 
 Your payment just zoomed through like a superhero! 🦸‍ You've successfully unlocked the awesome power of your chosen package. Get ready for a rollercoaster of AI fun and excitement! 🎢
 
@@ -147,7 +246,7 @@ Remember, with great power comes great... well, you know how it goes. Let's make
 
     # Catalog
     CATALOG = """
-🎭 Step Right Up to Our Role Catalogue Extravaganza! 🌟
+🎭 *Step Right Up to Our Role Catalogue Extravaganza!* 🌟
 
 Ever dreamt of having an AI sidekick specialized just for you? Our catalog is like a magical wardrobe, each role a unique outfit tailored for your adventures in AI land! 🧙‍♂️✨
 
@@ -156,7 +255,7 @@ Choose from an array of AI personas, each with its own flair and expertise. Whet
 👉 Ready to meet your match? Just hit the button below and let the magic begin! 🎩👇
 """
     CATALOG_FORBIDDEN_ERROR = """
-🔒 Whoops! Looks like you've hit a VIP-only zone! 🌟
+🔒 *Whoops! Looks like you've hit a VIP-only zone!* 🌟
 
 You're just a click away from unlocking our treasure trove of AI roles, but it seems you don't have the golden key yet. No worries, though! You can grab it easily.
 
@@ -164,10 +263,114 @@ You're just a click away from unlocking our treasure trove of AI roles, but it s
 
 Once you're all set up, our catalog of AI wonders will be waiting for you – your ticket to an extraordinary world of AI possibilities! 🎫✨
 """
-    PERSONAL_ASSISTANT = "🤖 Personal assistant"
-    CREATIVE_WRITER = "🖋️ Creative writer"
-    LANGUAGE_TUTOR = "🗣️ Language tutor"
-    TECHNICAL_ADVISOR = "💻 Technical advisor"
+    PERSONAL_ASSISTANT = {
+        "name": "🤖 Personal assistant",
+        "description": """
+Your go-to for anything and everything!
+From answering questions to deep conversations, I'm here to assist you like a trusty sidekick 🌟
+Let's tackle life's puzzles together!
+""",
+        "instruction": "You are a helpful assistant."
+    }
+    TUTOR = {
+        "name": "📚 Tutor",
+        "description": """
+Unlock the world of knowledge across all subjects!
+I'm here to make complex concepts simple and learning enjoyable 📚
+Whether it's math, science, or art, let's learn together!
+""",
+        "instruction": "You are a helpful tutor."
+    }
+    LANGUAGE_TUTOR = {
+        "name": "🗣️ Language tutor",
+        "description": """
+Embark on a linguistic adventure!
+From basic phrases to fluency, I'll guide you through the nuances of languages with ease and fun 🌐
+Let's converse in new tongues!
+""",
+        "instruction": "You are a helpful language tutor."
+    }
+    CREATIVE_WRITER = {
+        "name": "🖋️ Creative writer",
+        "description": """
+Ready to explore worlds of wonder?
+From crafting captivating stories to penning heartfelt poetry, let's unleash our collective creativity 🖋️
+Your imagination is the limit!
+""",
+        "instruction": "You are a helpful creative writer."
+    }
+    TECHNICAL_ADVISOR = {
+        "name": "💻 Technical advisor",
+        "description": """
+Navigating the tech maze made easy!
+Whether it's understanding new software, fixing bugs, or exploring tech trends, I'm here to simplify technology 💻
+Let's decode the digital world together!
+""",
+        "instruction": "You are a helpful technical advisor."
+    }
+    MARKETER = {
+        "name": "📈 Marketer",
+        "description": """
+Let's elevate your brand and outreach!
+From market research to campaign strategies, I'm here to help you navigate the marketing landscape and achieve your business goals 📊
+Your success is our target!
+""",
+        "instruction": "You are a helpful marketer."
+    }
+    SMM_SPECIALIST = {
+        "name": "📱 SMM-Specialist",
+        "description": """
+Transform your social media presence!
+I'll help you create engaging content, grow your audience, and stay ahead in the ever-evolving social media space 📱
+Let's make social media work for you!
+""",
+        "instruction": "You are a helpful SMM-specialist."
+    }
+    CONTENT_SPECIALIST = {
+        "name": "📝 Content specialist",
+        "description": """
+Content is king, and I'm here to help you rule!
+From SEO optimization to compelling copy, let's create content that resonates and engages ✍️
+Your message matters!
+""",
+        "instruction": "You are a helpful content specialist."
+    }
+    DESIGNER = {
+        "name": "🎨 Designer",
+        "description": """
+Visual storytelling at its best!
+Let's design experiences that captivate and communicate, from websites to brand identities 🖌️
+Your vision, our canvas!
+""",
+        "instruction": "You are a helpful designer."
+    }
+    SOCIAL_MEDIA_PRODUCER = {
+        "name": "📸 Producer in social media",
+        "description": """
+Crafting stories that click and connect on social media!
+Let's produce content that stands out and speaks to your audience 🎥
+Your story, brilliantly told on social platforms!
+""",
+        "instruction": "You are a helpful social media producer."
+    }
+    LIFE_COACH = {
+        "name": "🌱 Life coach",
+        "description": """
+Empowering you to reach your fullest potential!
+From setting goals to overcoming obstacles, I'm here to support and inspire you on your journey to personal growth 🌱
+Let's grow together!
+""",
+        "instruction": "You are a helpful life coach."
+    }
+    ENTREPRENEUR = {
+        "name": "💼 Entrepreneur",
+        "description": """
+Turning ideas into reality!
+Whether it's starting a business or scaling up, let's navigate the entrepreneurial journey with innovative strategies and insights 💡
+Your dream, our mission!
+""",
+        "instruction": "You are a helpful entrepreneur."
+    }
 
     # Chats
     SHOW_CHATS = "Show chats"
@@ -260,17 +463,18 @@ You're asking for more images than we have.
         emojis = Subscription.get_emojis()
 
         quotas = User.get_quotas(monthly_limits, additional_usage_quota)
-        gender_info = ""
+        gender_info = "Gender: Unspecified"
         if gender == UserGender.MALE:
-            gender_info = "Gender: Male 👕"
+            gender_info = f"Gender: {English.MALE} 👕"
         elif gender == UserGender.FEMALE:
-            gender_info = "Gender: Female 👚"
+            gender_info = f"Gender: {English.FEMALE} 👚"
 
         return f"""
 Profile 👤
 
 Subscription type: {subscription_type} {emojis[subscription_type]}
 {gender_info}
+Currency: RUB
 Current model: {current_model}
 Change model: /mode
 
@@ -321,7 +525,7 @@ Please select the subscription period by clicking on the button:
     def confirmation_subscribe(subscription_type: SubscriptionType, subscription_period: SubscriptionPeriod):
         cycles = English.cycles_subscribe()
 
-        return f"You're about to activate your subscription for {cycles[subscription_period]}."
+        return f"You're about to activate your subscription for *{cycles[subscription_period]}*."
 
     # Package
     @staticmethod
@@ -346,15 +550,15 @@ Hit a button and embark on an extraordinary journey with AI! It's time to redefi
         return f"""
 🚀 Fantastic!
 
-You've selected the {package_type} package
-🌟 Please type in the number of requests you'd like to go for
+You've selected the *{package_type}* package
+🌟 Please *type in the number of requests* you'd like to go for
 """
 
     # Chats
     @staticmethod
     def chats(current_chat_name: str, total_chats: int, available_to_create_chats: int):
         return f"""
-🗨️ *Current Chat: {current_chat_name}* 🌟
+🗨️ *Current chat: {current_chat_name}* 🌟
 
 Welcome to the dynamic world of AI-powered chats! Here's what you can do:
 
@@ -362,7 +566,7 @@ Welcome to the dynamic world of AI-powered chats! Here's what you can do:
 - Switch Between Chats: Effortlessly navigate through your different chat landscapes.
 - Delete Chats: Clean up by removing the chats you no longer need.
 
-📈 Total Chats: *{total_chats}* | Chats Available to Create: *{available_to_create_chats}*
+📈 Total Chats: *{total_chats} | Chats Available to Create: {available_to_create_chats}*
 
 Ready to tailor your chat experience? Explore the options below and let the conversations begin! 🚀👇
 """

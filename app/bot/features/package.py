@@ -1,8 +1,9 @@
-from typing import Optional, Dict
+from typing import Optional, Dict, List
 from google.cloud.firestore import Query
 
 from app.firebase import db
-from app.models import Package, PackageType, Currency, PackageStatus
+from app.models.common import Currency
+from app.models.package import Package, PackageType, PackageStatus
 
 
 async def get_package(package_id: str) -> Optional[Package]:
@@ -22,6 +23,13 @@ async def get_last_package_by_user_id(user_id: str) -> Optional[Package]:
 
     async for doc in package_stream:
         return Package(**doc.to_dict())
+
+
+async def get_packages_by_user_id(user_id: str) -> List[Package]:
+    packages_query = db.collection("packages").where("user_id", "==", user_id)
+    packages = [Package(**package.to_dict()) async for package in packages_query.stream()]
+
+    return packages
 
 
 async def create_package_object(user_id: str,

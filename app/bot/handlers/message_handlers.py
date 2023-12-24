@@ -1,28 +1,44 @@
 import random
 import time
 import io
+from datetime import datetime
+
+import pytz
 from PIL import Image
 
-from telegram import Update, constants, LabeledPrice, InputMediaPhoto
+from telegram import Update, constants, LabeledPrice, Message
 from telegram.ext import CallbackContext
 
 from AnnaDoncovaBackend.settings import YOOKASSA_TOKEN
 from app.bot.constants import PARSE_MODE
 from app.bot.features.chat import get_chat
 from app.bot.features.face_swap_package import get_face_swap_package_by_user_id_and_name, update_face_swap_package
+from app.bot.features.feedback import write_feedback
 from app.bot.features.message import write_message, get_messages_by_chat_id
+from app.bot.features.promo_code import get_promo_code_by_name, write_promo_code, \
+    get_used_promo_code_by_user_id_and_promo_code_id, write_used_promo_code
+from app.bot.features.subscription import write_subscription
 from app.bot.features.user import get_user, update_user
-from app.bot.helpers import create_new_chat, create_new_message_and_update_user, handle_face_swap, send_images
+from app.bot.helpers import create_new_chat, create_new_message_and_update_user, handle_face_swap, send_images, \
+    send_message_to_admins, create_subscription, process_voice_message, reply_with_voice
 from app.bot.integrations.openAI import get_response_message, get_response_image
 from app.bot.integrations.replicateAI import get_face_swap_image
-from app.bot.locales.main import get_localization
-from app.bot.utilities import is_time_limit_exceeded, is_messages_limit_exceeded
+from app.bot.keyboards import build_promo_code_admin_date_keyboard
+from app.bot.locales.main import get_localization, language_codes
+from app.bot.utilities import is_time_limit_exceeded, is_messages_limit_exceeded, is_awaiting_something
 from app.firebase import db, bucket
-from app.models import Model, User, UserQuota, UserSettings, PackageType, Package, FaceSwapPackageName
+from app.models.common import Model
+from app.models.face_swap_package import FaceSwapPackageName
+from app.models.package import PackageType, Package
+from app.models.promo_code import PromoCodeType
+from app.models.subscription import SubscriptionType, SubscriptionStatus
+from app.models.user import User, UserQuota, UserSettings
 
 
-async def handle_chatgpt(update: Update, user: User, user_quota: UserQuota):
-    await write_message(user.current_chat_id, "user", user.id, update.message.text)
+async def handle_chatgpt(update: Update, context: CallbackContext, user: User, user_quota: UserQuota):
+    text = context.user_data.get('recognized_text', update.message.text)
+
+    await write_message(user.current_chat_id, "user", user.id, text)
 
     chat = await get_chat(user.current_chat_id)
     messages = await get_messages_by_chat_id(user.current_chat_id)
@@ -30,7 +46,7 @@ async def handle_chatgpt(update: Update, user: User, user_quota: UserQuota):
     history = [
                   {
                       'role': 'system',
-                      'content': chat.role['description']
+                      'content': getattr(get_localization(user.language_code), chat.role)["instruction"]
                   }
               ] + [
                   {
@@ -54,14 +70,17 @@ async def handle_chatgpt(update: Update, user: User, user_quota: UserQuota):
         transaction = db.transaction()
         await create_new_message_and_update_user(transaction, role, content, user, user_quota)
 
-        header_text = f'💬 {chat.title}\n\n' if user.settings[UserSettings.SHOW_NAME_OF_THE_CHAT] else ''
-        footer_text = f'\n\n✉️ {user.monthly_limits[user_quota] + user.additional_usage_quota[user_quota] + 1}' \
-            if user.settings[UserSettings.SHOW_USAGE_QUOTA] else ''
-        await update.message.reply_text(
-            f"{header_text}{content}{footer_text}",
-            parse_mode=PARSE_MODE,
-            reply_to_message_id=update.message.message_id,
-        )
+        if user.settings[UserSettings.TURN_ON_VOICE_MESSAGES]:
+            await reply_with_voice(update, content, language_codes[user.language_code])
+        else:
+            header_text = f'💬 {chat.title}\n\n' if user.settings[UserSettings.SHOW_NAME_OF_THE_CHAT] else ''
+            footer_text = f'\n\n✉️ {user.monthly_limits[user_quota] + user.additional_usage_quota[user_quota] + 1}' \
+                if user.settings[UserSettings.SHOW_USAGE_QUOTA] else ''
+            await update.message.reply_text(
+                f"{header_text}{content}{footer_text}",
+                parse_mode=PARSE_MODE,
+                reply_to_message_id=update.message.message_id,
+            )
     except Exception as e:
         await update.message.reply_text(
             f"{get_localization(user.language_code).ERROR}: {e}\n\nPlease contact @roman_danilov",
@@ -71,7 +90,9 @@ async def handle_chatgpt(update: Update, user: User, user_quota: UserQuota):
         await processing_message.delete()
 
 
-async def handle_dalle(update: Update, user: User, user_quota: UserQuota):
+async def handle_dalle(update: Update, context: CallbackContext, user: User, user_quota: UserQuota):
+    text = context.user_data.get('recognized_text', update.message.text)
+
     processing_message = await update.message.reply_text(
         text=get_localization(user.language_code).processing_request(),
         reply_to_message_id=update.message.message_id
@@ -80,7 +101,7 @@ async def handle_dalle(update: Update, user: User, user_quota: UserQuota):
     await update.message.chat.send_action(action=constants.ChatAction.UPLOAD_PHOTO)
 
     try:
-        response_url = get_response_image(update.message.text)
+        response_url = get_response_image(text)
 
         if user.monthly_limits[user_quota] > 0:
             user.monthly_limits[user_quota] -= 1
@@ -112,6 +133,22 @@ async def handle_video(update: Update, context: CallbackContext):
     pass
 
 
+async def handle_voice(update: Update, context: CallbackContext):
+    user = await get_user(str(update.effective_user.id))
+
+    if user.additional_usage_quota[UserQuota.VOICE_MESSAGES]:
+        voice_file = await update.message.voice.get_file()
+
+        text = await process_voice_message(voice_file.file_path, language_codes[user.language_code])
+
+        context.user_data['recognized_text'] = text
+        await handle_message(update, context)
+        context.user_data['recognized_text'] = None
+    else:
+        await update.message.reply_text(text=get_localization(user.language_code).VOICE_MESSAGES_FORBIDDEN,
+                                        parse_mode=PARSE_MODE)
+
+
 async def handle_photo(update: Update, context: CallbackContext):
     user = await get_user(str(update.effective_user.id))
 
@@ -126,7 +163,9 @@ async def handle_photo(update: Update, context: CallbackContext):
 
 
 async def handle_message(update: Update, context: CallbackContext):
-    if update.edited_message or not update.message or update.message.via_bot or update.message.text.startswith('/'):
+    text = context.user_data.get('recognized_text', update.message.text)
+
+    if update.edited_message or not update.message or update.message.via_bot or text.startswith('/'):
         return
 
     user = await get_user(str(update.effective_user.id))
@@ -134,7 +173,7 @@ async def handle_message(update: Update, context: CallbackContext):
     try:
         if context.user_data.get('awaiting_quantity', False) and context.user_data.get('awaiting_package', False):
             package_type = context.user_data['awaiting_package']
-            quantity = int(update.message.text)
+            quantity = int(text)
             if ((package_type == PackageType.GPT3 and quantity < 50) or
                 (package_type == PackageType.GPT4 and quantity < 50) or
                 (package_type == PackageType.CHAT and quantity < 1) or
@@ -179,7 +218,7 @@ async def handle_message(update: Update, context: CallbackContext):
         elif (context.user_data.get('awaiting_quantity', False) and
               context.user_data.get('awaiting_face_swap_package', False)):
             quota = user.monthly_limits[UserQuota.FACE_SWAP] + user.additional_usage_quota[UserQuota.FACE_SWAP]
-            quantity = int(update.message.text)
+            quantity = int(text)
             name = context.user_data['face_swap_package_name']
             face_swap_package_quantity = len(getattr(FaceSwapPackageName, name)[f"{user.gender}_files"])
 
@@ -230,7 +269,6 @@ async def handle_message(update: Update, context: CallbackContext):
                 while user.additional_usage_quota[UserQuota.FACE_SWAP] and quantity_to_delete > 0:
                     user.additional_usage_quota[UserQuota.FACE_SWAP] -= 1
 
-                user_photo.make_private()
                 await update_user(user.id, {
                     "monthly_limits": user.monthly_limits,
                     "additional_usage_quota": user.additional_usage_quota,
@@ -242,7 +280,7 @@ async def handle_message(update: Update, context: CallbackContext):
                 context.user_data['awaiting_face_swap_package'] = False
     except ValueError:
         await update.message.reply_text(
-            get_localization(user.language_code).VALUE_ERROR,
+            text=get_localization(user.language_code).VALUE_ERROR,
             parse_mode=PARSE_MODE,
             reply_to_message_id=update.message.message_id,
         )
@@ -252,6 +290,126 @@ async def handle_message(update: Update, context: CallbackContext):
         await create_new_chat(transaction, user, str(update.message.chat_id))
 
         context.user_data['awaiting_chat'] = False
+    elif context.user_data.get('awaiting_feedback', False):
+        await write_feedback(user.id, text)
+        message = (f"#feedback\n\n"
+                   f"🚀 Новая обратная связь от пользователя: {user.id} 🚀\n\n"
+                   f"{text}")
+        await send_message_to_admins(update.get_bot(), message)
+        context.user_data['awaiting_feedback'] = False
+
+        await update.message.reply_text(
+            text=get_localization(user.language_code).FEEDBACK_SUCCESS,
+            parse_mode=PARSE_MODE,
+            reply_to_message_id=update.message.message_id,
+        )
+    elif context.user_data.get('awaiting_promo_code', False):
+        promo_code_name = text
+        promo_code = await get_promo_code_by_name(promo_code_name)
+        if promo_code:
+            current_date = datetime.now(pytz.UTC)
+            if current_date <= promo_code.until:
+                used_promo_code = await get_used_promo_code_by_user_id_and_promo_code_id(user.id, promo_code.id)
+                if used_promo_code:
+                    await update.message.reply_text(
+                        text=get_localization(user.language_code).PROMO_CODE_ALREADY_USED_ERROR,
+                        parse_mode=PARSE_MODE,
+                        reply_to_message_id=update.message.message_id,
+                    )
+                else:
+                    if promo_code.type == PromoCodeType.SUBSCRIPTION:
+                        if user.subscription_type == SubscriptionType.FREE:
+                            subscription = await write_subscription(user.id,
+                                                                    promo_code.details['subscription_type'],
+                                                                    promo_code.details['subscription_period'],
+                                                                    SubscriptionStatus.WAITING,
+                                                                    user.currency,
+                                                                    0)
+
+                            transaction = db.transaction()
+                            await create_subscription(transaction,
+                                                      subscription.id,
+                                                      subscription.user_id,
+                                                      "")
+                        else:
+                            await update.message.reply_text(
+                                text="Нельзя, уже есть подписочка",
+                                parse_mode=PARSE_MODE,
+                                reply_to_message_id=update.message.message_id,
+                            )
+                    await write_used_promo_code(user.id, promo_code.id)
+                    await update.message.reply_text(
+                        text=get_localization(user.language_code).PROMO_CODE_SUCCESS,
+                        parse_mode=PARSE_MODE,
+                        reply_to_message_id=update.message.message_id,
+                    )
+            else:
+                await update.message.reply_text(
+                    text=get_localization(user.language_code).PROMO_CODE_EXPIRED_ERROR,
+                    parse_mode=PARSE_MODE,
+                    reply_to_message_id=update.message.message_id,
+                )
+        else:
+            await update.message.reply_text(
+                text=get_localization(user.language_code).PROMO_CODE_NOT_FOUND_ERROR,
+                parse_mode=PARSE_MODE,
+                reply_to_message_id=update.message.message_id,
+            )
+    elif context.user_data.get('awaiting_promo_code_name', False):
+        promo_code_name = text.upper()
+        promo_code = await get_promo_code_by_name(promo_code_name)
+        if promo_code:
+            await update.message.reply_text(
+                text=get_localization(user.language_code).PROMO_CODE_NAME_EXISTS_ERROR,
+                parse_mode=PARSE_MODE,
+                reply_to_message_id=update.message.message_id,
+            )
+        else:
+            context.user_data['promo_code_name'] = promo_code_name
+            context.user_data['awaiting_promo_code_name'] = False
+            context.user_data['awaiting_promo_code_date'] = True
+            reply_markup = build_promo_code_admin_date_keyboard(user.language_code)
+            await update.message.reply_text(
+                text=get_localization(user.language_code).PROMO_CODE_CHOOSE_DATE,
+                reply_markup=reply_markup,
+                parse_mode=PARSE_MODE,
+                reply_to_message_id=update.message.message_id,
+            )
+    elif context.user_data.get('awaiting_promo_code_date', False):
+        try:
+            promo_code_until_date = datetime.strptime(text, "%d.%m.%Y")
+            promo_code_name = context.user_data['promo_code_name']
+            promo_code_type = context.user_data['promo_code_type']
+            details = {}
+            if context.user_data['promo_code_type'] == PromoCodeType.SUBSCRIPTION:
+                details['subscription_type'] = context.user_data['promo_code_subscription_type']
+                details['subscription_period'] = context.user_data['promo_code_subscription_period']
+            elif context.user_data['promo_code_type'] == PromoCodeType.PACKAGE:
+                pass
+
+            await write_promo_code(
+                created_by_user_id=user.id,
+                name=promo_code_name,
+                type=promo_code_type,
+                details=details,
+                until=promo_code_until_date
+            )
+            await update.message.reply_text(
+                text=get_localization(user.language_code).PROMO_CODE_SUCCESS_ADMIN,
+                parse_mode=PARSE_MODE
+            )
+
+            context.user_data['awaiting_promo_code_date'] = False
+            context.user_data['promo_code_name'] = False
+            context.user_data['promo_code_type'] = False
+            context.user_data['promo_code_subscription_type'] = False
+            context.user_data['promo_code_subscription_period'] = False
+        except ValueError:
+            await update.message.reply_text(
+                text=get_localization(user.language_code).PROMO_CODE_DATE_VALUE_ERROR,
+                parse_mode=PARSE_MODE,
+                reply_to_message_id=update.message.message_id
+            )
 
     current_time = time.time()
 
@@ -266,14 +424,15 @@ async def handle_message(update: Update, context: CallbackContext):
     else:
         return
     need_exit = await is_time_limit_exceeded(update, context, user, current_time) or \
-                await is_messages_limit_exceeded(update, user, user_quota)
+                await is_messages_limit_exceeded(update, user, user_quota) or \
+                is_awaiting_something(context)
     if need_exit:
         return
     context.user_data['last_request_time'] = current_time
 
     if user.current_model == Model.GPT3 or user.current_model == Model.GPT4:
-        await handle_chatgpt(update, user, user_quota)
+        await handle_chatgpt(update, context, user, user_quota)
     elif user.current_model == Model.DALLE3:
-        await handle_dalle(update, user, user_quota)
+        await handle_dalle(update, context, user, user_quota)
     elif user.current_model == Model.Face_Swap and not context.user_data.get('awaiting_face_swap_package', False):
         await handle_face_swap(update.message, context, user)

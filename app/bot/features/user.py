@@ -4,7 +4,9 @@ from typing import Optional, Dict, List
 from telegram import User as TelegramUser
 
 from app.firebase import db
-from app.models import User, Model, SubscriptionType, UserGender, Currency
+from app.models.common import Model, Currency
+from app.models.subscription import SubscriptionType
+from app.models.user import User, UserGender
 
 
 async def get_user(user_id: str) -> Optional[User]:
@@ -22,7 +24,7 @@ async def get_users() -> List[User]:
 
 def create_user_object(telegram_user: TelegramUser, user_data: Dict, chat_id: str, telegram_chat_id: str) -> User:
     return User(
-        id=telegram_user.id,
+        id=str(telegram_user.id),
         first_name=telegram_user.first_name,
         last_name=telegram_user.last_name or "",
         username=telegram_user.username,
@@ -45,8 +47,7 @@ def create_user_object(telegram_user: TelegramUser, user_data: Dict, chat_id: st
 async def write_user_in_transaction(transaction,
                                     telegram_user: TelegramUser,
                                     chat_id: str,
-                                    telegram_chat_id: str,
-                                    ) -> User:
+                                    telegram_chat_id: str) -> User:
     user_ref = db.collection('users').document(str(telegram_user.id))
     user_data = (await user_ref.get()).to_dict() or {}
 

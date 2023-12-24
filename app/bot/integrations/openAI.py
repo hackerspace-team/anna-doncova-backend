@@ -1,7 +1,7 @@
 import openai
 
 from AnnaDoncovaBackend import settings
-from app.models import Model
+from app.models.common import Model
 
 client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
 
