@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from telegram import Update
 from telegram.ext import CallbackContext
@@ -89,7 +89,7 @@ async def profile(update: Update, context: CallbackContext):
         "last_name": telegram_user.last_name or "",
         "username": telegram_user.username,
         "is_premium": telegram_user.is_premium,
-        "edited_at": datetime.now()
+        "edited_at": datetime.now(timezone.utc)
     })
 
     message = get_localization(user.language_code).profile(user.subscription_type,
@@ -181,16 +181,20 @@ async def chats(update: Update, context: CallbackContext):
 async def promo_code(update: Update, context: CallbackContext):
     user = await get_user(str(update.effective_user.id))
 
+    context.user_data['awaiting_promo_code'] = True
+    reply_markup = build_promo_code_keyboard(user.language_code)
+    await update.message.reply_text(text=get_localization(user.language_code).PROMO_CODE_INFO,
+                                    reply_markup=reply_markup,
+                                    parse_mode=PARSE_MODE)
+
+
+async def create_promo_code(update: Update, context: CallbackContext):
+    user = await get_user(str(update.effective_user.id))
+
     is_admin = update.message.chat_id in ADMIN_CHAT_IDS
     if is_admin:
         reply_markup = build_promo_code_admin_keyboard(user.language_code)
         await update.message.reply_text(text=get_localization(user.language_code).PROMO_CODE_INFO_ADMIN,
-                                        reply_markup=reply_markup,
-                                        parse_mode=PARSE_MODE)
-    else:
-        context.user_data['awaiting_promo_code'] = True
-        reply_markup = build_promo_code_keyboard(user.language_code)
-        await update.message.reply_text(text=get_localization(user.language_code).PROMO_CODE_INFO,
                                         reply_markup=reply_markup,
                                         parse_mode=PARSE_MODE)
 

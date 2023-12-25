@@ -1,4 +1,5 @@
 from typing import Optional, Dict
+
 from google.cloud.firestore import Query
 
 from app.firebase import db
@@ -20,6 +21,7 @@ async def get_last_subscription_by_user_id(user_id: str) -> Optional[Subscriptio
         .order_by("created_at", direction=Query.DESCENDING) \
         .limit(1) \
         .stream()
+
     async for doc in subscription_stream:
         return Subscription(**doc.to_dict())
 

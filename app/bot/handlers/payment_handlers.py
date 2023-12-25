@@ -4,12 +4,14 @@ from telegram.ext import CallbackContext
 from app.bot.constants import PARSE_MODE
 from app.bot.features.package import write_package, get_last_package_by_user_id
 from app.bot.features.subscription import write_subscription, get_last_subscription_by_user_id
+from app.bot.features.transaction import write_transaction
 from app.bot.features.user import get_user
 from app.bot.helpers import create_subscription, create_package
 from app.bot.locales.main import get_localization
 from app.firebase import db
 from app.models.package import PackageStatus
 from app.models.subscription import SubscriptionStatus
+from app.models.transaction import TransactionType, ServiceType
 
 
 async def pre_checkout(update: Update, context: CallbackContext):
@@ -57,6 +59,12 @@ async def successful(update: Update, context: CallbackContext):
                                   subscription.id,
                                   subscription.user_id,
                                   update.message.successful_payment.provider_payment_charge_id)
+        await write_transaction(user_id=user.id,
+                                type=TransactionType.INCOME,
+                                service=subscription.type,
+                                amount=subscription.amount,
+                                currency=subscription.currency,
+                                quantity=1)
 
         await update.message.reply_text(text=get_localization(user.language_code).SUBSCRIPTION_SUCCESS,
                                         parse_mode=PARSE_MODE)
@@ -70,6 +78,12 @@ async def successful(update: Update, context: CallbackContext):
                              package.id,
                              package.user_id,
                              update.message.successful_payment.provider_payment_charge_id)
+        await write_transaction(user_id=user.id,
+                                type=TransactionType.INCOME,
+                                service=package.type,
+                                amount=package.amount,
+                                currency=package.currency,
+                                quantity=package.quantity)
 
         await update.message.reply_text(text=get_localization(user.language_code).PACKAGE_SUCCESS,
                                         parse_mode=PARSE_MODE)

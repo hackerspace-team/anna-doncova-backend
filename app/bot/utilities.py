@@ -12,7 +12,7 @@ async def is_time_limit_exceeded(update: Update, context: CallbackContext, user:
     if user.additional_usage_quota[UserQuota.FAST_MESSAGES]:
         return False
 
-    if 'last_request_time' in context.user_data and user.current_model != Model.Face_Swap:
+    if 'last_request_time' in context.user_data and user.current_model != Model.FACE_SWAP:
         time_elapsed = current_time - context.user_data['last_request_time']
         if time_elapsed < LIMIT_BETWEEN_REQUESTS_SECONDS:
             remaining_time = int(LIMIT_BETWEEN_REQUESTS_SECONDS - time_elapsed)
@@ -46,7 +46,7 @@ async def is_time_limit_exceeded(update: Update, context: CallbackContext, user:
 
 
 async def is_messages_limit_exceeded(update: Update, user: User, user_quota: UserQuota):
-    if user.monthly_limits[user_quota] < 1 and user.additional_usage_quota[user_quota]:
+    if user.monthly_limits[user_quota] < 1 and user.additional_usage_quota[user_quota] < 1:
         await update.message.reply_text(
             f"You've reached a monthly limit in {user_quota}",
             reply_to_message_id=update.message.message_id
@@ -63,4 +63,18 @@ def is_awaiting_something(context: CallbackContext):
             context.user_data.get('awaiting_feedback', False) or
             context.user_data.get('awaiting_promo_code', False) or
             context.user_data.get('awaiting_promo_code_name', False) or
-            context.user_data.get('awaiting_promo_code_date', False))
+            context.user_data.get('awaiting_promo_code_date', False) or
+            context.user_data.get('awaiting_photo', False) or
+            context.user_data.get('awaiting_face_swap_package', False))
+
+
+def clear_all_awaiting(context: CallbackContext):
+    context.user_data['awaiting_quantity'] = False
+    context.user_data['awaiting_package'] = False
+    context.user_data['awaiting_chat'] = False
+    context.user_data['awaiting_feedback'] = False
+    context.user_data['awaiting_promo_code'] = False
+    context.user_data['awaiting_promo_code_name'] = False
+    context.user_data['awaiting_promo_code_date'] = False
+    context.user_data['awaiting_photo'] = False
+    context.user_data['awaiting_face_swap_package'] = False

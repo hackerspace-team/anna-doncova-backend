@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery, LabeledPrice
 from telegram.ext import CallbackContext
@@ -8,6 +8,7 @@ from app.bot.constants import PARSE_MODE
 from app.bot.features.chat import get_chat_by_user_id, update_chat, get_chats_by_user_id, delete_chat
 from app.bot.features.face_swap_package import get_face_swap_package_by_user_id_and_name, write_face_swap_package
 from app.bot.features.user import update_user, get_user
+from app.bot.handlers.message_handlers import handle_chatgpt
 from app.bot.helpers import handle_face_swap
 from app.bot.keyboards import (build_period_of_subscription_keyboard,
                                build_quantity_of_packages_keyboard,
@@ -16,7 +17,7 @@ from app.bot.keyboards import (build_period_of_subscription_keyboard,
                                build_delete_chat_keyboard,
                                build_face_swap_package_keyboard,
                                build_face_swap_choose_keyboard, build_promo_code_admin_subscription_keyboard,
-                               build_promo_code_admin_packages_keyboard,
+    # build_promo_code_admin_packages_keyboard,
                                build_promo_code_admin_period_of_subscription_keyboard,
                                build_promo_code_admin_name_keyboard, build_gender_keyboard)
 from app.bot.locales.main import get_localization
@@ -27,6 +28,24 @@ from app.models.package import Package, PackageType
 from app.models.promo_code import PromoCodeType
 from app.models.subscription import Subscription, SubscriptionType, SubscriptionPeriod
 from app.models.user import UserQuota, UserGender
+
+
+async def handle_chat_gpt_selection(query: CallbackQuery, action: str, context: CallbackContext):
+    user = await get_user(str(query.from_user.id))
+
+    if action == 'continue_generating':
+        context.user_data['recognized_text'] = get_localization(user.language_code).CONTINUE_GENERATING
+        if user.current_model == Model.GPT3:
+            user_quota = UserQuota.GPT3
+        elif user.current_model == Model.GPT4:
+            user_quota = UserQuota.GPT4
+        else:
+            raise NotImplemented
+
+        await handle_chatgpt(query, context, user, user_quota)
+        await query.edit_message_reply_markup(reply_markup=None)
+
+        context.user_data['recognized_text'] = None
 
 
 async def handle_feedback_selection(query: CallbackQuery, value: str, context: CallbackContext):
@@ -61,15 +80,15 @@ async def handle_promo_code_admin_selection(query: CallbackQuery, promo_code_typ
                                         caption=caption,
                                         reply_markup=reply_markup,
                                         parse_mode=PARSE_MODE)
-    elif promo_code_type == 'package':
-        photo = bucket.blob(f'packages/{user.language_code}_{user.currency}.png')
-        photo_data = photo.download_as_string()
-        caption = get_localization(user.language_code).PROMO_CODE_CHOOSE_PACKAGE_ADMIN
-        reply_markup = build_promo_code_admin_packages_keyboard(user.language_code)
-        await query.message.reply_photo(photo=photo_data,
-                                        caption=caption,
-                                        reply_markup=reply_markup,
-                                        parse_mode=PARSE_MODE)
+    # elif promo_code_type == 'package':
+    #     photo = bucket.blob(f'packages/{user.language_code}_{user.currency}.png')
+    #     photo_data = photo.download_as_string()
+    #     caption = get_localization(user.language_code).PROMO_CODE_CHOOSE_PACKAGE_ADMIN
+    #     reply_markup = build_promo_code_admin_packages_keyboard(user.language_code)
+    #     await query.message.reply_photo(photo=photo_data,
+    #                                     caption=caption,
+    #                                     reply_markup=reply_markup,
+    #                                     parse_mode=PARSE_MODE)
 
     await query.delete_message()
 
@@ -151,7 +170,7 @@ async def handle_mode_selection(query: CallbackQuery, mode: str, context: Callba
         await update_user(str(query.from_user.id), {"current_model": mode})
         await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(new_keyboard))
 
-    if mode == Model.Face_Swap:
+    if mode == Model.FACE_SWAP:
         user = await get_user(str(query.from_user.id))
 
         await handle_face_swap(query.message, context, user)
@@ -324,7 +343,7 @@ async def handle_catalog_selection(query: CallbackQuery, role_name: str):
         current_chat = await get_chat_by_user_id(user.id)
         await update_chat(current_chat.id, {
             "role": role_name,
-            "edited_at": datetime.now()
+            "edited_at": datetime.now(timezone.utc)
         })
         await query.edit_message_reply_markup(reply_markup=InlineKeyboardMarkup(new_keyboard))
 
@@ -423,7 +442,7 @@ async def handle_gender_selection(query: CallbackQuery, gender: UserGender, cont
         f"{text_your_gender} {text_gender_male if user.gender == UserGender.MALE else text_gender_female}"
     )
 
-    if user.current_model == Model.Face_Swap:
+    if user.current_model == Model.FACE_SWAP:
         await handle_face_swap(query.message, context, user)
 
 
@@ -437,6 +456,12 @@ async def handle_face_swap_choose_selection(query: CallbackQuery, package_name: 
     face_swap_package_name = face_swap_package.name
     if face_swap_package.name == FaceSwapPackageName.CELEBRITIES['name']:
         face_swap_package_name = get_localization(user.language_code).CELEBRITIES
+    elif face_swap_package_name == FaceSwapPackageName.MOVIE_CHARACTERS['name']:
+        face_swap_package_name = get_localization(user.language_code).MOVIE_CHARACTERS
+    elif face_swap_package_name == FaceSwapPackageName.PROFESSIONS['name']:
+        face_swap_package_name = get_localization(user.language_code).PROFESSIONS
+    elif face_swap_package_name == FaceSwapPackageName.SEVEN_WONDERS_OF_THE_ANCIENT_WORLD['name']:
+        face_swap_package_name = get_localization(user.language_code).SEVEN_WONDERS_OF_THE_ANCIENT_WORLD
 
     reply_markup = build_face_swap_package_keyboard(user.language_code)
 
@@ -476,6 +501,8 @@ async def choose_button(update: Update, context: CallbackContext):
 
     if value == 'close':
         await query.message.delete()
+    elif command == 'chat_gpt':
+        await handle_chat_gpt_selection(query, value, context)
     elif command == 'feedback':
         await handle_feedback_selection(query, value, context)
     elif command == 'language':

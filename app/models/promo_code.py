@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class PromoCodeType:
@@ -32,7 +32,7 @@ class PromoCode:
         self.details = details
         self.until = until
 
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         self.created_at = created_at if created_at is not None else current_time
         self.edited_at = edited_at if edited_at is not None else current_time
 
@@ -64,7 +64,7 @@ class UsedPromoCode:
         self.user_id = user_id
         self.promo_code_id = promo_code_id
 
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         self.date = date if date is not None else current_time
 
     def to_dict(self):

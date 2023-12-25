@@ -1,5 +1,5 @@
 import re
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.models.common import Currency
 
@@ -53,7 +53,7 @@ class Package:
         self.quantity = quantity
         self.provider_payment_charge_id = provider_payment_charge_id
 
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         self.created_at = created_at if created_at is not None else current_time
         self.edited_at = edited_at if edited_at is not None else current_time
 

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, List
 
 from telegram import User as TelegramUser
@@ -36,7 +36,7 @@ def create_user_object(telegram_user: TelegramUser, user_data: Dict, chat_id: st
         current_model=user_data.get("current_model", Model.GPT3),
         currency=user_data.get("currency", Currency.RUB),
         subscription_type=user_data.get("subscription_type", SubscriptionType.FREE),
-        last_subscription_limit_update=user_data.get("last_subscription_limit_update", datetime.now()),
+        last_subscription_limit_update=user_data.get("last_subscription_limit_update", datetime.now(timezone.utc)),
         monthly_limits=user_data.get("monthly_limits", User.DEFAULT_MONTHLY_LIMITS[SubscriptionType.FREE]),
         additional_usage_quota=user_data.get("usage_quota", User.DEFAULT_ADDITIONAL_USAGE_QUOTA),
         settings=user_data.get("settings", User.DEFAULT_SETTINGS),

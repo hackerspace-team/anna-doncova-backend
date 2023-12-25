@@ -11,6 +11,15 @@ from app.models.subscription import SubscriptionType, SubscriptionPeriod
 from app.models.user import UserSettings, UserGender
 
 
+def build_chat_gpt_continue_generating_keyboard(language_code: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(text=get_localization(language_code).CONTINUE_GENERATING,
+                                 callback_data='chat_gpt:continue_generating')
+        ]
+    ])
+
+
 def build_feedback_keyboard(language_code: str) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup([
         [InlineKeyboardButton(get_localization(language_code).EXIT, callback_data='feedback:exit')]
@@ -45,8 +54,8 @@ def build_mode_keyboard(language_code: str, model: str) -> InlineKeyboardMarkup:
                 callback_data=f'mode:{Model.DALLE3}'
             ),
             InlineKeyboardButton(
-                text="📷️ Face Swap" + (" ✅" if model == Model.Face_Swap else ""),
-                callback_data=f'mode:{Model.Face_Swap}'
+                text="📷️ Face Swap" + (" ✅" if model == Model.FACE_SWAP else ""),
+                callback_data=f'mode:{Model.FACE_SWAP}'
             ),
         ],
         [InlineKeyboardButton(get_localization(language_code).CLOSE, callback_data='mode:close')]
@@ -402,6 +411,24 @@ def build_face_swap_choose_keyboard(language_code: str) -> InlineKeyboardMarkup:
                 callback_data=f'face_swap_choose:{FaceSwapPackageName.CELEBRITIES["name"]}'
             )
         ],
+        [
+            InlineKeyboardButton(
+                text=get_localization(language_code).MOVIE_CHARACTERS,
+                callback_data=f'face_swap_choose:{FaceSwapPackageName.MOVIE_CHARACTERS["name"]}'
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=get_localization(language_code).PROFESSIONS,
+                callback_data=f'face_swap_choose:{FaceSwapPackageName.PROFESSIONS["name"]}'
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text=get_localization(language_code).SEVEN_WONDERS_OF_THE_ANCIENT_WORLD,
+                callback_data=f'face_swap_choose:{FaceSwapPackageName.SEVEN_WONDERS_OF_THE_ANCIENT_WORLD["name"]}'
+            )
+        ],
     ])
 
 
@@ -426,12 +453,12 @@ def build_promo_code_admin_keyboard(language_code: str) -> InlineKeyboardMarkup:
                 callback_data=f'promo_code_admin:subscription'
             )
         ],
-        [
-            InlineKeyboardButton(
-                text="💵 Пакет",
-                callback_data=f'promo_code_admin:package'
-            )
-        ],
+        # [
+        #     InlineKeyboardButton(
+        #         text="💵 Пакет",
+        #         callback_data=f'promo_code_admin:package'
+        #     )
+        # ],
         [InlineKeyboardButton(get_localization(language_code).EXIT, callback_data='promo_code_admin:exit')]
     ])
 
@@ -490,69 +517,69 @@ def build_promo_code_admin_period_of_subscription_keyboard(language_code: str,
     ])
 
 
-def build_promo_code_admin_packages_keyboard(language_code: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                text=get_localization(language_code).GPT3_REQUESTS,
-                callback_data=f'promo_code_admin_package:{PackageType.GPT3}'
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text=get_localization(language_code).GPT4_REQUESTS,
-                callback_data=f'promo_code_admin_package:{PackageType.GPT4}'
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text=get_localization(language_code).THEMATIC_CHATS,
-                callback_data=f'promo_code_admin_package:{PackageType.CHAT}'
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text=get_localization(language_code).DALLE3_REQUESTS,
-                callback_data=f'promo_code_admin_package:{PackageType.DALLE3}'
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text=get_localization(language_code).FACE_SWAP_REQUESTS,
-                callback_data=f'promo_code_admin_package:{PackageType.FACE_SWAP}'
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text=get_localization(language_code).ACCESS_TO_CATALOG,
-                callback_data=f'promo_code_admin_package:{PackageType.ACCESS_TO_CATALOG}'
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text=get_localization(language_code).ANSWERS_AND_REQUESTS_WITH_VOICE_MESSAGES,
-                callback_data=f'promo_code_admin_package:{PackageType.VOICE_MESSAGES}'
-            ),
-        ],
-        [
-            InlineKeyboardButton(
-                text=get_localization(language_code).FAST_ANSWERS,
-                callback_data=f'promo_code_admin_package:{PackageType.FAST_MESSAGES}'
-            ),
-        ],
-        [InlineKeyboardButton(get_localization(language_code).EXIT, callback_data='promo_code_admin_package:exit')]
-    ])
+# def build_promo_code_admin_packages_keyboard(language_code: str) -> InlineKeyboardMarkup:
+#     return InlineKeyboardMarkup([
+#         [
+#             InlineKeyboardButton(
+#                 text=get_localization(language_code).GPT3_REQUESTS,
+#                 callback_data=f'promo_code_admin_package:{PackageType.GPT3}'
+#             ),
+#         ],
+#         [
+#             InlineKeyboardButton(
+#                 text=get_localization(language_code).GPT4_REQUESTS,
+#                 callback_data=f'promo_code_admin_package:{PackageType.GPT4}'
+#             ),
+#         ],
+#         [
+#             InlineKeyboardButton(
+#                 text=get_localization(language_code).THEMATIC_CHATS,
+#                 callback_data=f'promo_code_admin_package:{PackageType.CHAT}'
+#             ),
+#         ],
+#         [
+#             InlineKeyboardButton(
+#                 text=get_localization(language_code).DALLE3_REQUESTS,
+#                 callback_data=f'promo_code_admin_package:{PackageType.DALLE3}'
+#             ),
+#         ],
+#         [
+#             InlineKeyboardButton(
+#                 text=get_localization(language_code).FACE_SWAP_REQUESTS,
+#                 callback_data=f'promo_code_admin_package:{PackageType.FACE_SWAP}'
+#             ),
+#         ],
+#         [
+#             InlineKeyboardButton(
+#                 text=get_localization(language_code).ACCESS_TO_CATALOG,
+#                 callback_data=f'promo_code_admin_package:{PackageType.ACCESS_TO_CATALOG}'
+#             ),
+#         ],
+#         [
+#             InlineKeyboardButton(
+#                 text=get_localization(language_code).ANSWERS_AND_REQUESTS_WITH_VOICE_MESSAGES,
+#                 callback_data=f'promo_code_admin_package:{PackageType.VOICE_MESSAGES}'
+#             ),
+#         ],
+#         [
+#             InlineKeyboardButton(
+#                 text=get_localization(language_code).FAST_ANSWERS,
+#                 callback_data=f'promo_code_admin_package:{PackageType.FAST_MESSAGES}'
+#             ),
+#         ],
+#         [InlineKeyboardButton(get_localization(language_code).EXIT, callback_data='promo_code_admin_package:exit')]
+#     ])
 
 
-def build_quantity_of_promo_code_admin_packages_keyboard(language_code: str) -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([
-        [
-            InlineKeyboardButton(
-                text=get_localization(language_code).EXIT,
-                callback_data='quantity_of_promo_code_admin_package:exit'
-            )
-        ]
-    ])
+# def build_quantity_of_promo_code_admin_packages_keyboard(language_code: str) -> InlineKeyboardMarkup:
+#     return InlineKeyboardMarkup([
+#         [
+#             InlineKeyboardButton(
+#                 text=get_localization(language_code).EXIT,
+#                 callback_data='quantity_of_promo_code_admin_package:exit'
+#             )
+#         ]
+#     ])
 
 
 def build_promo_code_admin_name_keyboard(language_code: str) -> InlineKeyboardMarkup:

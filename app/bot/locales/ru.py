@@ -165,6 +165,7 @@ class Russian(Texts):
 """
     ALREADY_MAKE_REQUEST = "Вы уже сделали запрос. Пожалуйста, подождите ⚠️"
     READY_FOR_NEW_REQUEST = "Вы можете задать следующий запрос 😌"
+    CONTINUE_GENERATING = "Продолжить генерацию"
     IMAGE_SUCCESS = "✨ Вот ваше созданное изображение! 🎨"
 
     # Settings
@@ -404,6 +405,7 @@ class Russian(Texts):
     # Face swap
     TELL_ME_YOUR_GENDER = "Скажите ваш пол:"
     YOUR_GENDER = "Ваш пол:"
+    UNSPECIFIED = "Не указан 🤷"
     MALE = "Мужской 🚹"
     FEMALE = "Женский 🚺"
     SEND_ME_YOUR_PICTURE = """
@@ -434,6 +436,9 @@ class Russian(Texts):
 Готовы? Погружаемся в мир воображения! 🌈 Просто *выберите пакет* ниже и начните своё фотоприключение 👇
     """
     CELEBRITIES = "Знаменитости ⭐️"
+    MOVIE_CHARACTERS = "Персонажи фильмов 🎥"
+    PROFESSIONS = "Профессии 🧑‍💻"
+    SEVEN_WONDERS_OF_THE_ANCIENT_WORLD = "Семь чудес Древнего мира 🌈"
     FACE_SWAP_MIN_ERROR = """
 🤨 *Постойте, партнёр!*
 
@@ -463,11 +468,12 @@ class Russian(Texts):
         emojis = Subscription.get_emojis()
 
         quotas = User.get_quotas(monthly_limits, additional_usage_quota)
-        gender_info = "Пол: Не указан"
         if gender == UserGender.MALE:
             gender_info = f"Пол: {Russian.MALE} 👕"
         elif gender == UserGender.FEMALE:
             gender_info = f"Пол: {Russian.FEMALE} 👚"
+        else:
+            gender_info = f"Пол: {Russian.UNSPECIFIED}"
 
         return f"""
 Профиль 👤

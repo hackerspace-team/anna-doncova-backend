@@ -1,5 +1,5 @@
 import re
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.models.common import Currency
 
@@ -60,7 +60,7 @@ class Subscription:
         self.amount = amount
         self.provider_payment_charge_id = provider_payment_charge_id
 
-        self.start_date = start_date if start_date is not None else datetime.now()
+        self.start_date = start_date if start_date is not None else datetime.now(timezone.utc)
         if period == SubscriptionPeriod.MONTH1:
             self.end_date = self.start_date + timedelta(days=30)
         elif period == SubscriptionPeriod.MONTHS3:
@@ -70,7 +70,7 @@ class Subscription:
         else:
             self.end_date = end_date
 
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         self.created_at = created_at if created_at is not None else current_time
         self.edited_at = edited_at if edited_at is not None else current_time
 

@@ -1,12 +1,11 @@
 import random
 import time
 import io
-from datetime import datetime
+from datetime import datetime, timezone
 
-import pytz
 from PIL import Image
 
-from telegram import Update, constants, LabeledPrice, Message
+from telegram import Update, constants, LabeledPrice
 from telegram.ext import CallbackContext
 
 from AnnaDoncovaBackend.settings import YOOKASSA_TOKEN
@@ -18,25 +17,29 @@ from app.bot.features.message import write_message, get_messages_by_chat_id
 from app.bot.features.promo_code import get_promo_code_by_name, write_promo_code, \
     get_used_promo_code_by_user_id_and_promo_code_id, write_used_promo_code
 from app.bot.features.subscription import write_subscription
+from app.bot.features.transaction import write_transaction
 from app.bot.features.user import get_user, update_user
 from app.bot.helpers import create_new_chat, create_new_message_and_update_user, handle_face_swap, send_images, \
     send_message_to_admins, create_subscription, process_voice_message, reply_with_voice
 from app.bot.integrations.openAI import get_response_message, get_response_image
 from app.bot.integrations.replicateAI import get_face_swap_image
-from app.bot.keyboards import build_promo_code_admin_date_keyboard
+from app.bot.keyboards import build_promo_code_admin_date_keyboard, build_chat_gpt_continue_generating_keyboard
 from app.bot.locales.main import get_localization, language_codes
 from app.bot.utilities import is_time_limit_exceeded, is_messages_limit_exceeded, is_awaiting_something
 from app.firebase import db, bucket
-from app.models.common import Model
+from app.models.common import Model, Currency
 from app.models.face_swap_package import FaceSwapPackageName
 from app.models.package import PackageType, Package
 from app.models.promo_code import PromoCodeType
 from app.models.subscription import SubscriptionType, SubscriptionStatus
+from app.models.transaction import TransactionType, ServiceType
 from app.models.user import User, UserQuota, UserSettings
 
 
 async def handle_chatgpt(update: Update, context: CallbackContext, user: User, user_quota: UserQuota):
-    text = context.user_data.get('recognized_text', update.message.text)
+    text = context.user_data.get('recognized_text', None)
+    if text is None:
+        text = update.message.text
 
     await write_message(user.current_chat_id, "user", user.id, text)
 
@@ -60,25 +63,52 @@ async def handle_chatgpt(update: Update, context: CallbackContext, user: User, u
         reply_to_message_id=update.message.message_id
     )
 
-    await update.message.chat.send_action(action=constants.ChatAction.TYPING)
+    if user.settings[UserSettings.TURN_ON_VOICE_MESSAGES]:
+        await update.message.chat.send_action(action=constants.ChatAction.RECORD_VOICE)
+    else:
+        await update.message.chat.send_action(action=constants.ChatAction.TYPING)
 
     try:
-        response_message = get_response_message(user.current_model, history)
+        response = await get_response_message(user.current_model, history)
+        message = response['message']
+        if user_quota == UserQuota.GPT3:
+            service = ServiceType.GPT3
+            input_price = response['input_tokens'] * 0.000001
+            output_price = response['output_tokens'] * 0.000002
+        elif user_quota == UserQuota.GPT4:
+            service = ServiceType.GPT4
+            input_price = response['input_tokens'] * 0.00001
+            output_price = response['output_tokens'] * 0.00003
+        else:
+            raise NotImplemented
 
-        # role, content = ["assistant", "Hello! How can I assist you today?"]
-        role, content = response_message.role, response_message.content
+        total_price = round(input_price + output_price, 6)
+        await write_transaction(user_id=user.id,
+                                type=TransactionType.EXPENSE,
+                                service=service,
+                                amount=total_price,
+                                currency=Currency.USD,
+                                quantity=1)
+
+        role, content = message.role, message.content
         transaction = db.transaction()
         await create_new_message_and_update_user(transaction, role, content, user, user_quota)
 
         if user.settings[UserSettings.TURN_ON_VOICE_MESSAGES]:
-            await reply_with_voice(update, content, language_codes[user.language_code])
+            reply_markup = build_chat_gpt_continue_generating_keyboard(user.language_code)
+            await reply_with_voice(update,
+                                   content,
+                                   user.id,
+                                   reply_markup if response['finish_reason'] == 'length' else None)
         else:
             header_text = f'💬 {chat.title}\n\n' if user.settings[UserSettings.SHOW_NAME_OF_THE_CHAT] else ''
             footer_text = f'\n\n✉️ {user.monthly_limits[user_quota] + user.additional_usage_quota[user_quota] + 1}' \
                 if user.settings[UserSettings.SHOW_USAGE_QUOTA] else ''
+            reply_markup = build_chat_gpt_continue_generating_keyboard(user.language_code)
             await update.message.reply_text(
                 f"{header_text}{content}{footer_text}",
                 parse_mode=PARSE_MODE,
+                reply_markup=reply_markup if response['finish_reason'] == 'length' else None,
                 reply_to_message_id=update.message.message_id,
             )
     except Exception as e:
@@ -91,7 +121,9 @@ async def handle_chatgpt(update: Update, context: CallbackContext, user: User, u
 
 
 async def handle_dalle(update: Update, context: CallbackContext, user: User, user_quota: UserQuota):
-    text = context.user_data.get('recognized_text', update.message.text)
+    text = context.user_data.get('recognized_text', None)
+    if text is None:
+        text = update.message.text
 
     processing_message = await update.message.reply_text(
         text=get_localization(user.language_code).processing_request(),
@@ -101,16 +133,23 @@ async def handle_dalle(update: Update, context: CallbackContext, user: User, use
     await update.message.chat.send_action(action=constants.ChatAction.UPLOAD_PHOTO)
 
     try:
-        response_url = get_response_image(text)
+        response_url = await get_response_image(text)
 
         if user.monthly_limits[user_quota] > 0:
             user.monthly_limits[user_quota] -= 1
         else:
             user.additional_usage_quota[user_quota] -= 1
+
         await update_user(user.id, {
             "monthly_limits": user.monthly_limits,
             "additional_usage_quota": user.additional_usage_quota,
         })
+        await write_transaction(user_id=user.id,
+                                type=TransactionType.EXPENSE,
+                                service=ServiceType.DALLE3,
+                                amount=0.040,
+                                currency=Currency.USD,
+                                quantity=1)
 
         footer_text = f'\n\n✉️ {user.monthly_limits[user_quota] + user.additional_usage_quota[user_quota] + 1}' \
             if user.settings[UserSettings.SHOW_USAGE_QUOTA] else ''
@@ -139,7 +178,7 @@ async def handle_voice(update: Update, context: CallbackContext):
     if user.additional_usage_quota[UserQuota.VOICE_MESSAGES]:
         voice_file = await update.message.voice.get_file()
 
-        text = await process_voice_message(voice_file.file_path, language_codes[user.language_code])
+        text = await process_voice_message(voice_file.file_path, user.id)
 
         context.user_data['recognized_text'] = text
         await handle_message(update, context)
@@ -163,7 +202,9 @@ async def handle_photo(update: Update, context: CallbackContext):
 
 
 async def handle_message(update: Update, context: CallbackContext):
-    text = context.user_data.get('recognized_text', update.message.text)
+    text = context.user_data.get('recognized_text', None)
+    if text is None:
+        text = update.message.text
 
     if update.edited_message or not update.message or update.message.via_bot or text.startswith('/'):
         return
@@ -238,6 +279,8 @@ async def handle_message(update: Update, context: CallbackContext):
                     parse_mode=PARSE_MODE
                 )
             else:
+                await update.message.chat.send_action(action=constants.ChatAction.UPLOAD_PHOTO)
+
                 user_photo = bucket.blob(f'users/{user.id}.jpeg')
                 user_photo.make_public()
                 user_photo_link = user_photo.public_url
@@ -248,26 +291,38 @@ async def handle_message(update: Update, context: CallbackContext):
                     random_image_name = random.choice(files)
                     while random_image_name in face_swap_package.used_images:
                         random_image_name = random.choice(files)
+                    face_swap_package.used_images.append(random_image_name)
+
                     random_image = bucket.blob(
                         f'face_swap/{user.gender.lower()}/{face_swap_package.name.lower()}/{random_image_name}')
                     random_image.make_public()
-                    face_swap_package.used_images.append(random_image_name)
                     image_link = random_image.public_url
                     image_data = random_image.download_as_bytes()
                     image = Image.open(io.BytesIO(image_data))
 
                     width, height = image.size
 
-                    face_swap_image = get_face_swap_image(width, height, image_link, user_photo_link)
-                    images.append(face_swap_image)
+                    face_swap_response = await get_face_swap_image(width, height, image_link, user_photo_link)
+                    images.append(face_swap_response['image'])
+
+                    await write_transaction(user_id=user.id,
+                                            type=TransactionType.EXPENSE,
+                                            service=ServiceType.FACE_SWAP,
+                                            amount=round(0.000225 * face_swap_response['seconds'], 6),
+                                            currency=Currency.USD,
+                                            quantity=1)
 
                 await send_images(update.message, images)
 
                 quantity_to_delete = len(images)
-                while user.monthly_limits[UserQuota.FACE_SWAP] > 0 and quantity_to_delete > 0:
-                    user.monthly_limits[UserQuota.FACE_SWAP] -= 1
-                while user.additional_usage_quota[UserQuota.FACE_SWAP] and quantity_to_delete > 0:
-                    user.additional_usage_quota[UserQuota.FACE_SWAP] -= 1
+                user.monthly_limits[UserQuota.FACE_SWAP] = max(
+                    user.monthly_limits[UserQuota.FACE_SWAP] - quantity_to_delete,
+                    0
+                )
+                user.additional_usage_quota[UserQuota.FACE_SWAP] = max(
+                    user.additional_usage_quota[UserQuota.FACE_SWAP] - quantity_to_delete,
+                    0
+                )
 
                 await update_user(user.id, {
                     "monthly_limits": user.monthly_limits,
@@ -307,7 +362,7 @@ async def handle_message(update: Update, context: CallbackContext):
         promo_code_name = text
         promo_code = await get_promo_code_by_name(promo_code_name)
         if promo_code:
-            current_date = datetime.now(pytz.UTC)
+            current_date = datetime.now(timezone.utc)
             if current_date <= promo_code.until:
                 used_promo_code = await get_used_promo_code_by_user_id_and_promo_code_id(user.id, promo_code.id)
                 if used_promo_code:
@@ -384,8 +439,8 @@ async def handle_message(update: Update, context: CallbackContext):
             if context.user_data['promo_code_type'] == PromoCodeType.SUBSCRIPTION:
                 details['subscription_type'] = context.user_data['promo_code_subscription_type']
                 details['subscription_period'] = context.user_data['promo_code_subscription_period']
-            elif context.user_data['promo_code_type'] == PromoCodeType.PACKAGE:
-                pass
+            # elif context.user_data['promo_code_type'] == PromoCodeType.PACKAGE:
+            #     pass
 
             await write_promo_code(
                 created_by_user_id=user.id,
@@ -419,7 +474,7 @@ async def handle_message(update: Update, context: CallbackContext):
         user_quota = UserQuota.GPT4
     elif user.current_model == Model.DALLE3:
         user_quota = UserQuota.DALLE3
-    elif user.current_model == Model.Face_Swap:
+    elif user.current_model == Model.FACE_SWAP:
         user_quota = UserQuota.FACE_SWAP
     else:
         return
@@ -434,5 +489,5 @@ async def handle_message(update: Update, context: CallbackContext):
         await handle_chatgpt(update, context, user, user_quota)
     elif user.current_model == Model.DALLE3:
         await handle_dalle(update, context, user, user_quota)
-    elif user.current_model == Model.Face_Swap and not context.user_data.get('awaiting_face_swap_package', False):
+    elif user.current_model == Model.FACE_SWAP and not context.user_data.get('awaiting_face_swap_package', False):
         await handle_face_swap(update.message, context, user)

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 from app.bot.constants import (GPT3_MONTHLY_LIMIT_MESSAGES_FREE,
@@ -22,10 +22,10 @@ from app.models.subscription import SubscriptionType
 
 
 class UserQuota:
-    GPT3 = "GPT3"
-    GPT4 = "GPT4"
-    DALLE3 = "DALLE3"
-    FACE_SWAP = "FACE_SWAP"
+    GPT3 = "gpt3"
+    GPT4 = "gpt4"
+    DALLE3 = "dalle3"
+    FACE_SWAP = "face_swap"
     ADDITIONAL_CHATS = "additional_chats"
     FAST_MESSAGES = "fast_messages"
     VOICE_MESSAGES = "voice_messages"
@@ -145,7 +145,7 @@ class User:
             else self.DEFAULT_ADDITIONAL_USAGE_QUOTA
         self.settings = settings if settings is not None else self.DEFAULT_SETTINGS
 
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         self.last_subscription_limit_update = last_subscription_limit_update \
             if last_subscription_limit_update is not None else current_time
         self.created_at = created_at if created_at is not None else current_time

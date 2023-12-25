@@ -23,6 +23,7 @@ from app.bot.handlers.command_handlers import (start,
                                                chats,
                                                feedback,
                                                promo_code,
+                                               create_promo_code,
                                                statistics)
 from app.bot.handlers.job_handlers import reset_monthly_limits
 from app.bot.handlers.message_handlers import handle_message, handle_photo, handle_video, handle_voice
@@ -53,6 +54,7 @@ async def main():
     application.add_handler(CommandHandler("subscribe", subscribe))
     application.add_handler(CommandHandler("buy", buy))
     application.add_handler(CommandHandler("promo_code", promo_code))
+    application.add_handler(CommandHandler("create_promo_code", create_promo_code))
     application.add_handler(PreCheckoutQueryHandler(pre_checkout))
     application.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful))
 

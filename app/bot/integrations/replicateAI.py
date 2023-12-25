@@ -1,4 +1,6 @@
 import os
+import time
+from typing import Dict
 
 import replicate
 
@@ -7,7 +9,7 @@ from AnnaDoncovaBackend import settings
 os.environ["REPLICATE_API_TOKEN"] = settings.REPLICATE_API_TOKEN
 
 
-def get_face_swap_image(width: int, height: int, target_image: str, source_image: str):
+async def get_face_swap_image(width: int, height: int, target_image: str, source_image: str) -> Dict:
     model_ref = "yan-ops/face_swap:1c128bbaa2b685bcee5378b39d079a2c52de358a54d6e432f5dc3d61689e9de3"
     input_parameters = {
         "width": width,
@@ -26,9 +28,23 @@ def get_face_swap_image(width: int, height: int, target_image: str, source_image
         "num_images_per_prompt": 1
     }
 
-    output = replicate.run(
+    start_time = time.time()
+    output = await replicate.async_run(
         ref=model_ref,
         input=input_parameters
     )
+    end_time = time.time()
+    seconds = end_time - start_time
 
-    return output['image']
+    page_1 = await replicate.predictions.async_list()
+    for item in page_1:
+        if output == item.output:
+            try:
+                seconds = item.metrics['predict_time']
+            except KeyError:
+                break
+
+    return {
+        "image": output['image'],
+        "seconds": seconds,
+    }

@@ -59,7 +59,7 @@ async def reset_monthly_limits(context: CallbackContext):
                         "monthly_limits": User.DEFAULT_MONTHLY_LIMITS[SubscriptionType.FREE],
                         "additional_usage_quota": user.additional_usage_quota,
                         "settings": user.settings,
-                        "last_subscription_limit_update": datetime.now()
+                        "last_subscription_limit_update": datetime.now(timezone.utc)
                     })
 
                     for telegram_chat_id in user.telegram_chat_ids:
@@ -70,7 +70,7 @@ async def reset_monthly_limits(context: CallbackContext):
                 else:
                     batch.update(user_ref, {
                         "monthly_limits": User.DEFAULT_MONTHLY_LIMITS[user.subscription_type],
-                        "last_subscription_limit_update": datetime.now()
+                        "last_subscription_limit_update": datetime.now(timezone.utc)
                     })
 
                     for telegram_chat_id in user.telegram_chat_ids:

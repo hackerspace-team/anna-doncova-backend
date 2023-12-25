@@ -1,5 +1,7 @@
 from typing import List, Optional
 
+from google.cloud.firestore import Query
+
 from app.firebase import db
 from app.models.message import Message
 
@@ -13,8 +15,12 @@ async def get_message(message_id: str) -> Optional[Message]:
 
 
 async def get_messages_by_chat_id(chat_id: str) -> List[Message]:
-    messages_query = db.collection("messages").where("chat_id", "==", chat_id).limit(10)
-    messages = [Message(**message.to_dict()) async for message in messages_query.stream()]
+    messages_stream = db.collection("messages") \
+        .where("chat_id", "==", chat_id) \
+        .order_by("created_at", direction=Query.DESCENDING) \
+        .limit(10) \
+        .stream()
+    messages = [Message(**message.to_dict()) async for message in messages_stream]
 
     return messages
 

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 class Message:
@@ -18,7 +18,7 @@ class Message:
         self.sender_id = str(sender_id)
         self.content = content
 
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         self.created_at = created_at if created_at is not None else current_time
         self.edited_at = edited_at if edited_at is not None else current_time
 

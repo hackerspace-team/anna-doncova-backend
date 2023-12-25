@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 
 
@@ -25,7 +25,7 @@ class Chat:
         self.title = title
         self.role = role if role is not None else "PERSONAL_ASSISTANT"
 
-        current_time = datetime.now()
+        current_time = datetime.now(timezone.utc)
         self.created_at = created_at if created_at is not None else current_time
         self.edited_at = edited_at if edited_at is not None else current_time
 

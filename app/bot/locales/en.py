@@ -165,6 +165,7 @@ To change a model use /mode 😉
 """
     ALREADY_MAKE_REQUEST = "You've already made a request. Please wait ⚠️"
     READY_FOR_NEW_REQUEST = "You can ask the next request 😌"
+    CONTINUE_GENERATING = "Continue generating"
     IMAGE_SUCCESS = "✨ Here's your image creation! 🎨"
 
     # Settings
@@ -404,6 +405,7 @@ How about adding more chats to your realm instead? Check out /subscribe or /buy 
     # Face swap
     TELL_ME_YOUR_GENDER = "Tell me your gender:"
     YOUR_GENDER = "Your gender:"
+    UNSPECIFIED = "Unspecified 🤷"
     MALE = "Male 🚹"
     FEMALE = "Female 🚺"
     SEND_ME_YOUR_PICTURE = """
@@ -434,6 +436,9 @@ Once you've got the perfect shot, upload your photo and let the magic happen �
 Ready? Let's dive into a world of imagination! 🌈 Just *select a package below* and start your photo adventure 👇
     """
     CELEBRITIES = "Celebrities ⭐️"
+    MOVIE_CHARACTERS = "Movie characters 🎥"
+    PROFESSIONS = "Professions 🧑‍💻"
+    SEVEN_WONDERS_OF_THE_ANCIENT_WORLD = "Seven Wonders of the Ancient World 🌈"
     FACE_SWAP_MIN_ERROR = """
 🤨 *Hold on there, partner!*
 
@@ -463,11 +468,12 @@ You're asking for more images than we have.
         emojis = Subscription.get_emojis()
 
         quotas = User.get_quotas(monthly_limits, additional_usage_quota)
-        gender_info = "Gender: Unspecified"
         if gender == UserGender.MALE:
-            gender_info = f"Gender: {English.MALE} 👕"
+            gender_info = f"Gender: {English.MALE}"
         elif gender == UserGender.FEMALE:
-            gender_info = f"Gender: {English.FEMALE} 👚"
+            gender_info = f"Gender: {English.FEMALE}"
+        else:
+            gender_info = f"Gender: {English.UNSPECIFIED}"
 
         return f"""
 Profile 👤

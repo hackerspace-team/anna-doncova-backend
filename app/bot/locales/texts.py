@@ -19,6 +19,7 @@ class Texts(Protocol):
 ----------
 
 👨‍💻👩‍💻 *Команды для админа*:
+😇 /create\\_promo\\_code - *Создать промокод*
 📊 /statistics - *Просмотр статистики*.
 """
 
@@ -106,6 +107,7 @@ TODO
     INFO: str
     ALREADY_MAKE_REQUEST: str
     READY_FOR_NEW_REQUEST: str
+    CONTINUE_GENERATING: str
     IMAGE_SUCCESS: str
 
     # Settings
@@ -178,11 +180,15 @@ TODO
     # Face swap
     TELL_ME_YOUR_GENDER: str
     YOUR_GENDER: str
+    UNSPECIFIED: str
     MALE: str
     FEMALE: str
     SEND_ME_YOUR_PICTURE: str
     CHOOSE_YOUR_PACKAGE: str
     CELEBRITIES: str
+    MOVIE_CHARACTERS: str
+    PROFESSIONS: str
+    SEVEN_WONDERS_OF_THE_ANCIENT_WORLD: str
     FACE_SWAP_MIN_ERROR: str
     FACE_SWAP_MAX_ERROR: str
 
