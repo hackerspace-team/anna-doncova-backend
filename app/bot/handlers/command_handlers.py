@@ -10,10 +10,11 @@ from app.bot.features.user import get_user, update_user
 from app.bot.helpers import create_user_and_chat
 from app.bot.keyboards import build_language_keyboard, build_mode_keyboard, build_settings_keyboard, \
     build_subscriptions_keyboard, build_packages_keyboard, build_catalog_keyboard, build_chats_keyboard, \
-    build_feedback_keyboard, build_promo_code_keyboard, build_promo_code_admin_keyboard, build_profile_keyboard
+    build_feedback_keyboard, build_promo_code_keyboard, build_promo_code_admin_keyboard, build_profile_keyboard, \
+    build_statistics_admin_keyboard
 from app.bot.locales.main import get_localization
 from app.firebase import db, bucket
-from app.models.user import UserSettings, UserQuota
+from app.models.user import UserQuota
 
 
 async def start(update: Update, context: CallbackContext):
@@ -149,7 +150,7 @@ async def buy(update: Update, context: CallbackContext):
 async def catalog(update: Update, context: CallbackContext):
     user = await get_user(str(update.effective_user.id))
 
-    if not user.settings[UserSettings.ACCESS_TO_CATALOG]:
+    if not user.additional_usage_quota[UserQuota.ACCESS_TO_CATALOG]:
         message = get_localization(user.language_code).CATALOG_FORBIDDEN_ERROR
         await update.message.reply_text(text=message,
                                         parse_mode=PARSE_MODE)
@@ -200,4 +201,11 @@ async def create_promo_code(update: Update, context: CallbackContext):
 
 
 async def statistics(update: Update, context: CallbackContext):
-    pass
+    user = await get_user(str(update.effective_user.id))
+
+    is_admin = update.message.chat_id in ADMIN_CHAT_IDS
+    if is_admin:
+        reply_markup = build_statistics_admin_keyboard(user.language_code)
+        await update.message.reply_text(text=get_localization(user.language_code).STATISTICS_INFO,
+                                        reply_markup=reply_markup,
+                                        parse_mode=PARSE_MODE)

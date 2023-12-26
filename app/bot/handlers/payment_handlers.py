@@ -9,16 +9,21 @@ from app.bot.features.user import get_user
 from app.bot.helpers import create_subscription, create_package
 from app.bot.locales.main import get_localization
 from app.firebase import db
-from app.models.package import PackageStatus
+from app.models.package import PackageStatus, PackageType
 from app.models.subscription import SubscriptionStatus
 from app.models.transaction import TransactionType, ServiceType
+
+
+class PaymentType:
+    SUBSCRIPTION = 'SUBSCRIPTION'
+    PACKAGE = 'PACKAGE'
 
 
 async def pre_checkout(update: Update, context: CallbackContext):
     query = update.pre_checkout_query
 
     payment_type = query.invoice_payload.split(':')[0]
-    if payment_type == 'SUBSCRIPTION':
+    if payment_type == PaymentType.SUBSCRIPTION:
         _, user_id, subscription_type, subscription_period = query.invoice_payload.split(':')
         try:
             await write_subscription(user_id,
@@ -30,7 +35,7 @@ async def pre_checkout(update: Update, context: CallbackContext):
             await query.answer(ok=True)
         except Exception:
             await query.answer(ok=False)
-    elif payment_type == 'PACKAGE':
+    elif payment_type == PaymentType.PACKAGE:
         _, user_id, package_type, quantity = query.invoice_payload.split(':')
         try:
             await write_package(user_id,
@@ -49,7 +54,7 @@ async def pre_checkout(update: Update, context: CallbackContext):
 async def successful(update: Update, context: CallbackContext):
     payment = update.message.successful_payment
     payment_type = payment.invoice_payload.split(':')[0]
-    if payment_type == 'SUBSCRIPTION':
+    if payment_type == PaymentType.SUBSCRIPTION:
         user_id = str(update.effective_user.id)
         user = await get_user(user_id)
         subscription = await get_last_subscription_by_user_id(user_id)
@@ -68,7 +73,7 @@ async def successful(update: Update, context: CallbackContext):
 
         await update.message.reply_text(text=get_localization(user.language_code).SUBSCRIPTION_SUCCESS,
                                         parse_mode=PARSE_MODE)
-    elif payment_type == 'PACKAGE':
+    elif payment_type == PaymentType.PACKAGE:
         user_id = str(update.effective_user.id)
         user = await get_user(user_id)
         package = await get_last_package_by_user_id(user_id)
@@ -78,9 +83,27 @@ async def successful(update: Update, context: CallbackContext):
                              package.id,
                              package.user_id,
                              update.message.successful_payment.provider_payment_charge_id)
+
+        service_type = package.type
+        if package.type == PackageType.GPT3:
+            service_type = ServiceType.GPT3
+        elif package.type == PackageType.GPT4:
+            service_type = ServiceType.GPT4
+        elif package.type == PackageType.DALLE3:
+            service_type = ServiceType.DALLE3
+        elif package.type == PackageType.FACE_SWAP:
+            service_type = ServiceType.FACE_SWAP
+        elif package.type == PackageType.CHAT:
+            service_type = ServiceType.ADDITIONAL_CHATS
+        elif package.type == PackageType.ACCESS_TO_CATALOG:
+            service_type = ServiceType.ACCESS_TO_CATALOG
+        elif package.type == PackageType.VOICE_MESSAGES:
+            service_type = ServiceType.VOICE_MESSAGES
+        elif package.type == PackageType.FAST_MESSAGES:
+            service_type = ServiceType.FAST_MESSAGES
         await write_transaction(user_id=user.id,
                                 type=TransactionType.INCOME,
-                                service=package.type,
+                                service=service_type,
                                 amount=package.amount,
                                 currency=package.currency,
                                 quantity=package.quantity)

@@ -1,4 +1,5 @@
-from typing import Optional, Dict
+from datetime import datetime
+from typing import Optional, Dict, List
 
 from app.firebase import db
 from app.models.common import Currency
@@ -11,6 +12,19 @@ async def get_transaction(transaction_id: str) -> Optional[Transaction]:
 
     if transaction.exists:
         return Transaction(**transaction.to_dict())
+
+
+async def get_transactions(start_date: Optional[datetime] = None,
+                           end_date: Optional[datetime] = None) -> List[Transaction]:
+    transactions_query = db.collection("transactions")
+
+    if start_date:
+        transactions_query = transactions_query.where("created_at", ">=", start_date)
+    if end_date:
+        transactions_query = transactions_query.where("created_at", "<=", end_date)
+
+    transactions = transactions_query.stream()
+    return [Transaction(**transaction.to_dict()) async for transaction in transactions]
 
 
 async def create_transaction_object(user_id: str,

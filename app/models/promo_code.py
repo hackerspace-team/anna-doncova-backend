@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 class PromoCodeType:
     SUBSCRIPTION = 'SUBSCRIPTION'
     PACKAGE = 'PACKAGE'
+    DISCOUNT = 'DISCOUNT'
 
 
 class PromoCode:

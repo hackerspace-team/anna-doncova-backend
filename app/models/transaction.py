@@ -1,16 +1,25 @@
 from datetime import datetime, timezone
 
 from app.models.common import Currency
-from app.models.subscription import SubscriptionType
-from app.models.user import UserQuota
 
 
 class TransactionType:
-    INCOME = 'INCOME'
-    EXPENSE = 'EXPENSE'
+    INCOME = "INCOME"
+    EXPENSE = "EXPENSE"
 
 
-class ServiceType(SubscriptionType, UserQuota):
+class ServiceType:
+    STANDARD = "STANDARD"
+    VIP = "VIP"
+    PLATINUM = "PLATINUM"
+    GPT3 = "GPT3"
+    GPT4 = "GPT4"
+    DALLE3 = "DALLE3"
+    FACE_SWAP = "FACE_SWAP"
+    ADDITIONAL_CHATS = "ADDITIONAL_CHATS"
+    FAST_MESSAGES = "FAST_MESSAGES"
+    VOICE_MESSAGES = "VOICE_MESSAGES"
+    ACCESS_TO_CATALOG = "ACCESS_TO_CATALOG"
     OTHER = "OTHER"
 
 
@@ -38,7 +47,7 @@ class Transaction:
         self.id = str(id)
         self.user_id = str(user_id)
         self.type = type
-        self.service = service.upper()
+        self.service = service
         self.amount = amount
         self.currency = currency
         self.quantity = quantity
@@ -49,13 +58,13 @@ class Transaction:
 
     def to_dict(self):
         return {
-            'id': self.id,
-            'user_id': self.user_id,
-            'type': self.type,
-            'service': self.service,
-            'amount': self.amount,
-            'currency': self.currency,
-            'quantity': self.quantity,
-            'created_at': self.created_at,
-            'edited_at': self.edited_at
+            "id": self.id,
+            "user_id": self.user_id,
+            "type": self.type,
+            "service": self.service,
+            "amount": self.amount,
+            "currency": self.currency,
+            "quantity": self.quantity,
+            "created_at": self.created_at,
+            "edited_at": self.edited_at
         }

@@ -17,8 +17,16 @@ async def get_user(user_id: str) -> Optional[User]:
         return User(**user.to_dict())
 
 
-async def get_users() -> List[User]:
-    users = db.collection("users").stream()
+async def get_users(start_date: Optional[datetime] = None,
+                    end_date: Optional[datetime] = None) -> List[User]:
+    users_query = db.collection("users")
+
+    if start_date:
+        users_query = users_query.where("created_at", ">=", start_date)
+    if end_date:
+        users_query = users_query.where("created_at", "<=", end_date)
+
+    users = users_query.stream()
     return [User(**user.to_dict()) async for user in users]
 
 

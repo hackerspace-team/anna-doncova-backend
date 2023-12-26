@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional, Dict, List
 
 from app.bot.features.user import get_user
@@ -21,6 +22,19 @@ async def get_chat_by_user_id(user_id: str) -> Optional[Chat]:
         return chat
 
 
+async def get_chats(start_date: Optional[datetime] = None,
+                    end_date: Optional[datetime] = None) -> List[Chat]:
+    chats_query = db.collection("chats")
+
+    if start_date:
+        chats_query = chats_query.where("created_at", ">=", start_date)
+    if end_date:
+        chats_query = chats_query.where("created_at", "<=", end_date)
+
+    chats = chats_query.stream()
+    return [Chat(**chat.to_dict()) async for chat in chats]
+
+
 async def get_chats_by_user_id(user_id: str) -> List[Chat]:
     chats_query = db.collection('chats').where("user_id", "==", user_id)
     chats = [Chat(**chat.to_dict()) async for chat in chats_query.stream()]
@@ -28,21 +42,14 @@ async def get_chats_by_user_id(user_id: str) -> List[Chat]:
     return chats
 
 
-async def create_chat_object(user_id: str, telegram_chat_id: str, title="New chat") -> Chat:
+async def create_chat_object(user_id: str, telegram_chat_id: str, title) -> Chat:
     chat_ref = db.collection('chats').document()
     return Chat(id=chat_ref.id, user_id=user_id, telegram_chat_ids=[telegram_chat_id], title=title)
 
 
-async def write_chat_in_transaction(transaction, user_id: str, telegram_chat_id: str) -> Chat:
-    chat = await create_chat_object(user_id, telegram_chat_id)
+async def write_chat_in_transaction(transaction, user_id: str, telegram_chat_id: str, title="New chat") -> Chat:
+    chat = await create_chat_object(user_id, telegram_chat_id, title)
     transaction.set(db.collection('chats').document(chat.id), chat.to_dict())
-
-    return chat
-
-
-async def write_chat(user_id: str, telegram_chat_id: str) -> Chat:
-    chat = await create_chat_object(user_id, telegram_chat_id)
-    await db.collection('chats').document(chat.id).set(chat.to_dict())
 
     return chat
 

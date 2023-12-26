@@ -1,4 +1,4 @@
-from typing import Optional, Dict, List
+from typing import Optional, Dict
 
 from app.firebase import db
 from app.models.face_swap_package import FaceSwapPackage
@@ -26,7 +26,7 @@ async def get_face_swap_package_by_user_id_and_name(user_id: str,
 
 async def create_face_swap_package_object(user_id: str,
                                           name: str,
-                                          used_images: List[str]) -> FaceSwapPackage:
+                                          used_images: Dict) -> FaceSwapPackage:
     face_swap_package_ref = db.collection('face_swap_packages').document()
     return FaceSwapPackage(
         id=face_swap_package_ref.id,
@@ -38,7 +38,7 @@ async def create_face_swap_package_object(user_id: str,
 
 async def write_face_swap_package(user_id: str,
                                   name: str,
-                                  used_images: List[str]) -> FaceSwapPackage:
+                                  used_images: Dict) -> FaceSwapPackage:
     face_swap_package = await create_face_swap_package_object(user_id, name, used_images)
     await db.collection('face_swap_packages').document(face_swap_package.id).set(face_swap_package.to_dict())
 

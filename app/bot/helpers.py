@@ -119,8 +119,8 @@ async def create_new_message_and_update_user(transaction, role: str, content: st
 
 
 @firestore.async_transactional
-async def create_new_chat(transaction, user: User, telegram_chat_id: str):
-    await write_chat_in_transaction(transaction, user.id, telegram_chat_id)
+async def create_new_chat(transaction, user: User, telegram_chat_id: str, title: str):
+    await write_chat_in_transaction(transaction, user.id, telegram_chat_id, title)
     user.additional_usage_quota[UserQuota.ADDITIONAL_CHATS] -= 1
     await update_user_in_transaction(transaction, user.id, {
         "additional_usage_quota": user.additional_usage_quota,
@@ -150,9 +150,6 @@ async def send_images(message: Message, images: List[str]):
     for i in range(0, len(images), 10):
         media_group = [InputMediaPhoto(media=img) for img in images[i:i + 10]]
         await message.reply_media_group(media=media_group)
-
-        if len(images) - i == 1:
-            await message.reply_photo(photo=images[i])
 
 
 async def send_message_to_admins(bot: Bot, message: str):

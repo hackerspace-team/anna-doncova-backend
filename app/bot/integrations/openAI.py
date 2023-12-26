@@ -11,7 +11,7 @@ client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
 
 
 def get_default_max_tokens(model: str) -> int:
-    base = 64
+    base = 1024
     if model == Model.GPT3 or model == Model.GPT4:
         return base
 
@@ -21,7 +21,6 @@ def get_default_max_tokens(model: str) -> int:
 async def get_response_message(current_model: str, history: list) -> Dict:
     max_tokens = get_default_max_tokens(current_model)
 
-    print(history)
     loop = asyncio.get_event_loop()
     response = await loop.run_in_executor(
         None,

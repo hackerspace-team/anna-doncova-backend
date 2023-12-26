@@ -7,9 +7,9 @@ from app.models.common import Currency
 class PackageType:
     GPT3 = "GPT3"
     GPT4 = "GPT4"
-    CHAT = "CHAT"
     DALLE3 = "DALLE3"
     FACE_SWAP = "FACE_SWAP"
+    CHAT = "CHAT"
     ACCESS_TO_CATALOG = "ACCESS_TO_CATALOG"
     VOICE_MESSAGES = "VOICE_MESSAGES"
     FAST_MESSAGES = "FAST_MESSAGES"

@@ -467,7 +467,6 @@ class Russian(Texts):
                 additional_usage_quota) -> str:
         emojis = Subscription.get_emojis()
 
-        quotas = User.get_quotas(monthly_limits, additional_usage_quota)
         if gender == UserGender.MALE:
             gender_info = f"Пол: {Russian.MALE} 👕"
         elif gender == UserGender.FEMALE:
@@ -484,11 +483,23 @@ class Russian(Texts):
 Текущая модель: {current_model}
 Поменять модель: /mode
 
-GPT-3.5 запросов на месяц: {quotas[UserQuota.GPT3]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.GPT3]}
-GPT-4.0 запросов на месяц: {quotas[UserQuota.GPT4]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.GPT4]}
-Дополнительные чаты: {quotas[UserQuota.ADDITIONAL_CHATS]}
-DALL-E 3 изображений на месяц: {quotas[UserQuota.DALLE3]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.DALLE3]}
-Изображений с заменой лица на месяц: {quotas[UserQuota.FACE_SWAP]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.FACE_SWAP]}
+✉️
+GPT-3.5 запросов на месяц: {monthly_limits[UserQuota.GPT3]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.GPT3]}
+Дополнительные GPT-3.5 запросы: {additional_usage_quota[UserQuota.GPT3]}
+GPT-4.0 запросов на месяц: {monthly_limits[UserQuota.GPT4]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.GPT4]}
+Дополнительные GPT-4.0 запросы: {additional_usage_quota[UserQuota.GPT4]}
+
+🖼
+DALL-E 3 изображений на месяц: {monthly_limits[UserQuota.DALLE3]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.DALLE3]}
+Дополнительные DALL-E 3 изображения: {additional_usage_quota[UserQuota.DALLE3]}
+
+📷
+Изображений с заменой лица на месяц: {monthly_limits[UserQuota.FACE_SWAP]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.FACE_SWAP]}
+Дополнительные изображения с заменой лица: {additional_usage_quota[UserQuota.FACE_SWAP]}
+
+💬
+Дополнительные чаты: {additional_usage_quota[UserQuota.ADDITIONAL_CHATS]}
+
 Оформить подписку: /subscribe
 Купить дополнительные запросы: /buy
 """

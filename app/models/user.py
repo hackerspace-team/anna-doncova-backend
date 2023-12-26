@@ -172,12 +172,3 @@ class User:
             'created_at': self.created_at,
             'edited_at': self.edited_at
         }
-
-    @staticmethod
-    def get_quotas(monthly_limits, additional_usage_quota):
-        quotas = {
-            service: monthly_limits[service] + additional_usage_quota.get(service, 0) for service in monthly_limits
-        }
-        quotas[UserQuota.ADDITIONAL_CHATS] = additional_usage_quota[UserQuota.ADDITIONAL_CHATS]
-
-        return quotas

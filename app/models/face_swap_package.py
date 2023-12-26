@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import List
+from typing import Dict
 
 from app.models.user import UserGender
 
@@ -61,7 +61,7 @@ class FaceSwapPackageName:
         f"{UserGender.FEMALE}_files": [
             '1_Driver.jpeg',
             '2_Accountant.jpeg',
-            '3_Programmer.jpeg',
+            '3_Programmer.png',
             '4_Doctor.jpeg',
             '5_Cook.jpeg',
         ]
@@ -93,7 +93,7 @@ class FaceSwapPackage:
     id: str
     user_id: str
     name: str
-    used_images: List[str]
+    used_images: Dict
     created_at: datetime
     edited_at: datetime
 
@@ -101,7 +101,7 @@ class FaceSwapPackage:
                  id: str,
                  user_id: str,
                  name: str,
-                 used_images: List[str],
+                 used_images: Dict,
                  created_at=None,
                  edited_at=None):
         self.id = id

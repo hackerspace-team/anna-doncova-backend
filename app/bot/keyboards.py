@@ -602,3 +602,33 @@ def build_promo_code_admin_date_keyboard(language_code: str) -> InlineKeyboardMa
             )
         ]
     ])
+
+
+def build_statistics_admin_keyboard(language_code: str) -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup([
+        [
+            InlineKeyboardButton(
+                text="За день 📅",
+                callback_data=f'statistics_admin:day'
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="За неделю 📆",
+                callback_data=f'statistics_admin:week'
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="За месяц 🗓️",
+                callback_data=f'statistics_admin:month'
+            )
+        ],
+        [
+            InlineKeyboardButton(
+                text="За всё время ⏳",
+                callback_data=f'statistics_admin:all'
+            )
+        ],
+        [InlineKeyboardButton(get_localization(language_code).CLOSE, callback_data='statistics_admin:close')]
+    ])

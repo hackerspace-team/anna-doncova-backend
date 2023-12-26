@@ -289,9 +289,9 @@ async def handle_message(update: Update, context: CallbackContext):
                 images = []
                 for _ in range(quantity):
                     random_image_name = random.choice(files)
-                    while random_image_name in face_swap_package.used_images:
+                    while random_image_name in face_swap_package.used_images[user.gender]:
                         random_image_name = random.choice(files)
-                    face_swap_package.used_images.append(random_image_name)
+                    face_swap_package.used_images[user.gender].append(random_image_name)
 
                     random_image = bucket.blob(
                         f'face_swap/{user.gender.lower()}/{face_swap_package.name.lower()}/{random_image_name}')
@@ -342,7 +342,7 @@ async def handle_message(update: Update, context: CallbackContext):
 
     if context.user_data.get('awaiting_chat', False):
         transaction = db.transaction()
-        await create_new_chat(transaction, user, str(update.message.chat_id))
+        await create_new_chat(transaction, user, str(update.message.chat_id), update.message.text)
 
         context.user_data['awaiting_chat'] = False
     elif context.user_data.get('awaiting_feedback', False):

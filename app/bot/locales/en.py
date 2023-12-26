@@ -52,17 +52,16 @@ Just type away or use a command to begin your AI journey! 🌟
 Hey there! We're always looking to improve and your feedback is like gold dust to us. 💬✨
 - Love something about our bot? Let us know!
 - Got a feature request? We're all ears!
-- Something bugging you? We're here to squash those bugs. 🐞
+- Something bugging you? We're here to squash those bugs 🐞
 Just type your thoughts and hit send. It's that simple! Your insights help us grow and get better every day.
 
 And remember, every piece of feedback is a step towards making our bot even more awesome. Can't wait to hear from you! 💌
 """
     FEEDBACK_SUCCESS = """
-🌟 *Feedback Received!* 🌟
+🌟 *Feedback received!* 🌟
 
 Thank you for sharing your thoughts! 💌
-Your input is the secret sauce to our success. We're cooking up some improvements and your feedback is the key ingredient. 🍳🔑
-
+Your input is the secret sauce to our success. We're cooking up some improvements and your feedback is the key ingredient 🍳🔑
 Keep an eye out for updates and new features, all inspired by you. Until then, happy chatting! 🚀
 
 Your opinion matters a lot to us! 💖
@@ -80,34 +79,31 @@ Your opinion matters a lot to us! 💖
     PROMO_CODE_INFO = """
 🔓 *Unlock the world of AI wonders with your secret code!* 🌟
 
-If you've got a *promo code*, just type it in to reveal hidden features and special surprises. 🎁
+If you've got a *promo code*, just type it in to reveal hidden features and special surprises 🎁
 
-*No code?* No problem! Simply click 'Exit' to continue exploring the AI universe without it. 🚀
+*No code?* No problem! Simply click 'Exit' to continue exploring the AI universe without it 🚀
 """
     PROMO_CODE_SUCCESS = """
 🎉 *Woohoo! You've Struck Gold!* 🌟
 
-Your promo code has been successfully activated! Get ready to dive into a world of AI wonders with your shiny new perks. 🚀
-
+Your promo code has been successfully activated! Get ready to dive into a world of AI wonders with your shiny new perks 🚀
 Thanks for joining us on this AI-powered adventure. Enjoy the extra goodies and let's make some magic together! ✨
 
 Happy exploring! 🤖🌐
 """
     PROMO_CODE_EXPIRED_ERROR = """
-🕒 *Whoops, Time's Up on This Promo Code!*
+🕒 *Whoops, time's up on this promo code!*
 
-Looks like this promo code has hit its expiration date. 📆 It's like a Cinderella story, but without the glass slipper. 🥿
-
+Looks like this promo code has hit its expiration date 📆. It's like a Cinderella story, but without the glass slipper 🥿
 But hey, don't lose heart! You can still explore our other magical offers with /subscribe or /buy. There's always something exciting waiting for you in our AI wonderland! 🎩✨
 
 Stay curious and let the AI adventure continue! 🌟🚀
 """
     PROMO_CODE_NOT_FOUND_ERROR = """
-🔍 *Oops, Promo Code Not Found!*
+🔍 *Oops, promo code not found!*
 
-It seems like the promo code you entered is playing hide and seek with us. 🕵️‍♂️ We couldn't find it in our system.
-
-🤔 Double-check for any typos and give it another go. If it's still a no-show, maybe it's time to hunt for another code or check out our /subscribe and /buy options for some neat deals 🛍️
+It seems like the promo code you entered is playing hide and seek with us 🕵️‍♂️. We couldn't find it in our system 🤔
+Double-check for any typos and give it another go. If it's still a no-show, maybe it's time to hunt for another code or check out our /subscribe and /buy options for some neat deals 🛍️
 
 Keep your spirits high, and let's keep the AI fun rolling! 🚀🎈
 """
@@ -115,7 +111,6 @@ Keep your spirits high, and let's keep the AI fun rolling! 🚀🎈
 🚫 *Oops, déjà vu!*
 
 Looks like you've already used this promo code. It's a one-time magic spell, and it seems you've already cast it! ✨🧙
-
 No worries, though! You can check out our latest offers with /subscribe or /buy. There's always a new trick up our AI sleeve! 🎉🔮
 
 Keep exploring and let the AI surprises continue! 🤖
@@ -190,17 +185,17 @@ Let's turn those voice messages into text and keep the conversation flowing! �
     DISCOUNT = "Discount"
     NO_DISCOUNT = "No discount"
     SUBSCRIPTION_SUCCESS = """
-🎉 *Hooray! You're All Set!* 🚀
+🎉 *Hooray! You're all set!* 🚀
 
 Your subscription is now as active as a caffeinated squirrel! 🐿️☕ Welcome to the club of awesomeness. Here's what's going to happen next:
-- A world of possibilities just opened up. 🌍✨
-- Your AI pals are gearing up to assist you. 🤖👍
-- Get ready to dive into a sea of features and fun. 🌊🎉
+- A world of possibilities just opened up 🌍✨
+- Your AI pals are gearing up to assist you 🤖👍
+- Get ready to dive into a sea of features and fun 🌊🎉
 
 Thank you for embarking on this fantastic journey with us! Let's make some magic happen! 🪄🌟
 """
     SUBSCRIPTION_RESET = """
-🚀 *Subscription Quota Refreshed!*
+🚀 *Subscription quota refreshed!*
 
 Hello there, fellow AI adventurer! 🌟
 Guess what? Your subscription quota has just been topped up! It's like a magic refill, but better because it's real. 🧙‍♂️
@@ -222,9 +217,9 @@ The AI adventure awaits! Recharge, regroup, and let's continue this exciting jou
     GPT3_REQUESTS = "✉️ GPT3 requests"
     GPT3_REQUESTS_DESCRIPTION = "Unleash the power of GPT 3 for witty chats, smart advice, and endless fun! 🤖✨"
     GPT4_REQUESTS = "🧠 GPT4 requests"
-    GPT4_REQUESTS_DESCRIPTION = "Experience GPT4's advanced intelligence for deeper insights and groundbreaking conversations. 🧠🌟"
+    GPT4_REQUESTS_DESCRIPTION = "Experience GPT4's advanced intelligence for deeper insights and groundbreaking conversations 🧠🌟"
     THEMATIC_CHATS = "💬 Thematic chats"
-    THEMATIC_CHATS_DESCRIPTION = "Dive into topics you love with Thematic Chats, guided by AI in a world of tailored discussions. 📚🗨️"
+    THEMATIC_CHATS_DESCRIPTION = "Dive into topics you love with Thematic Chats, guided by AI in a world of tailored discussions 📚🗨️"
     DALLE3_REQUESTS = "🖼 DALLE3 images"
     DALLE3_REQUESTS_DESCRIPTION = "Turn ideas into art with DALLE3 – where your imagination becomes stunning visual reality! 🎨🌈"
     FACE_SWAP_REQUESTS = "📷 Images with face replacement"
@@ -238,7 +233,7 @@ The AI adventure awaits! Recharge, regroup, and let's continue this exciting jou
     MIN_ERROR = "Oops! It looks like the number entered is below our minimum threshold. Please enter a value that meets or exceeds the minimum required. Let's try that again! 🔄"
     VALUE_ERROR = "Whoops! That doesn't seem like a number. 🤔 Could you please enter a numeric value? Let's give it another go! 🔢"
     PACKAGE_SUCCESS = """
-🎉 *Cha-Ching! Payment Success!* 💳
+🎉 *Cha-Ching! Payment success!* 💳
 
 Your payment just zoomed through like a superhero! 🦸‍ You've successfully unlocked the awesome power of your chosen package. Get ready for a rollercoaster of AI fun and excitement! 🎢
 
@@ -247,10 +242,9 @@ Remember, with great power comes great... well, you know how it goes. Let's make
 
     # Catalog
     CATALOG = """
-🎭 *Step Right Up to Our Role Catalogue Extravaganza!* 🌟
+🎭 *Step right up to our role catalogue extravaganza!* 🌟
 
 Ever dreamt of having an AI sidekick specialized just for you? Our catalog is like a magical wardrobe, each role a unique outfit tailored for your adventures in AI land! 🧙‍♂️✨
-
 Choose from an array of AI personas, each with its own flair and expertise. Whether you need a brainstorm buddy, a creative muse, or a factual wizard, we've got them all!
 
 👉 Ready to meet your match? Just hit the button below and let the magic begin! 🎩👇
@@ -259,7 +253,6 @@ Choose from an array of AI personas, each with its own flair and expertise. Whet
 🔒 *Whoops! Looks like you've hit a VIP-only zone!* 🌟
 
 You're just a click away from unlocking our treasure trove of AI roles, but it seems you don't have the golden key yet. No worries, though! You can grab it easily.
-
 🚀 Head over to /subscribe for some fantastic subscription options, or check out /buy if you're in the mood for some a la carte AI delights.
 
 Once you're all set up, our catalog of AI wonders will be waiting for you – your ticket to an extraordinary world of AI possibilities! 🎫✨
@@ -386,7 +379,7 @@ Head over to /subscribe or /buy to unlock the power of multiple chats. More chat
     TYPE_CHAT_NAME = "Type your chat name"
     SWITCH_CHAT = "Switch between chats"
     SWITCH_CHAT_FORBIDDEN = """
-"🔄 Switching Gears? Hold That Thought! ⚙️
+"🔄 Switching gears? Hold that thought! ⚙️
 
 You're currently in your one and only chat universe. It's a cozy place, but why not expand your horizons? 🌌
 
@@ -394,13 +387,13 @@ To hop between multiple thematic chats, just get your pass from /subscribe or /b
 """
     DELETE_CHAT = "Delete a chat"
     DELETE_CHAT_FORBIDDEN = """
-🗑️ Delete This Chat? That's Lonely Talk! 💬
+🗑️ Delete this chat? That's lonely talk! 💬
 
 This is your sole chat kingdom, and a kingdom needs its king or queen! Deleting it would be like canceling your own party. 🎈
 
 How about adding more chats to your realm instead? Check out /subscribe or /buy to build your chat empire! 👑
 """
-    DELETE_CHAT_SUCCESS = "🗑️ Chat Successfully Deleted! 🎉"
+    DELETE_CHAT_SUCCESS = "🗑️ Chat successfully deleted! 🎉"
 
     # Face swap
     TELL_ME_YOUR_GENDER = "Tell me your gender:"
@@ -409,13 +402,13 @@ How about adding more chats to your realm instead? Check out /subscribe or /buy 
     MALE = "Male 🚹"
     FEMALE = "Female 🚺"
     SEND_ME_YOUR_PICTURE = """
-📸 *Ready for a Photo Transformation? Here's How to Get Started!*
+📸 *Ready for a photo transformation? Here's how to get started!*
 
-👍 *Ideal Photo Guidelines*:
+👍 *Ideal photo guidelines*:
 - Clear, high-quality selfie.
 - Only one person should be in the selfie.
 
-👎 *Please Avoid These Types of Photos*:
+👎 *Please avoid these types of photos*:
 - Group photos.
 - Animals.
 - Children under 18 years.
@@ -429,9 +422,9 @@ How about adding more chats to your realm instead? Check out /subscribe or /buy 
 Once you've got the perfect shot, upload your photo and let the magic happen 🌟
 """
     CHOOSE_YOUR_PACKAGE = """
-🌟*Let's Get Creative with Your Photos!*
+🌟*Let's get creative with your photos!*
 
-*First step:* Choose Your Adventure! 🚀
+*First step:* Choose your adventure! 🚀
 
 Ready? Let's dive into a world of imagination! 🌈 Just *select a package below* and start your photo adventure 👇
     """
@@ -467,7 +460,6 @@ You're asking for more images than we have.
                 additional_usage_quota) -> str:
         emojis = Subscription.get_emojis()
 
-        quotas = User.get_quotas(monthly_limits, additional_usage_quota)
         if gender == UserGender.MALE:
             gender_info = f"Gender: {English.MALE}"
         elif gender == UserGender.FEMALE:
@@ -484,11 +476,23 @@ Currency: RUB
 Current model: {current_model}
 Change model: /mode
 
-GPT-3.5 requests for month: {quotas[UserQuota.GPT3]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.GPT3]}
-GPT-4.0 requests for month: {quotas[UserQuota.GPT4]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.GPT4]}
-Additional chats: {quotas[UserQuota.ADDITIONAL_CHATS]}
-DALL-E 3 images for month: {quotas[UserQuota.DALLE3]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.DALLE3]}
-Face swap images for month: {quotas[UserQuota.FACE_SWAP]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.FACE_SWAP]}
+✉️
+GPT-3.5 requests for month: {monthly_limits[UserQuota.GPT3]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.GPT3]}
+Additional GPT-3.5 requests: {additional_usage_quota[UserQuota.GPT3]}
+GPT-4.0 requests for month: {monthly_limits[UserQuota.GPT4]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.GPT4]}
+Additional GPT-4.0 requests: {additional_usage_quota[UserQuota.GPT4]}
+
+🖼
+DALL-E 3 images for month: {monthly_limits[UserQuota.DALLE3]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.DALLE3]}
+Additional DALL-E 3 images: {additional_usage_quota[UserQuota.DALLE3]}
+
+📷
+Face swap images for month: {monthly_limits[UserQuota.FACE_SWAP]}/{User.DEFAULT_MONTHLY_LIMITS[subscription_type][UserQuota.FACE_SWAP]}
+Additional face swap images: {additional_usage_quota[UserQuota.FACE_SWAP]}
+
+💬
+Additional chats: {additional_usage_quota[UserQuota.ADDITIONAL_CHATS]}
+
 Subscribe: /subscribe
 Buy additional requests: /buy
 """
@@ -502,7 +506,7 @@ Buy additional requests: /buy
 
 - *Standard* ⭐: For just {prices[SubscriptionType.STANDARD]}, step into the AI playground! Perfect for daily musings, creative bursts, and those "just curious" moments. Chat up a storm with ChatGPT 3, conjure images from thin air with DALLE-3, and swap faces faster than you can say "cheese"! 🧀
 
-- *VIP* 🔥: Got grander ambitions? {prices[SubscriptionType.VIP]} unlocks deeper dialogues, more complex image creation, and access to a wider array of digital personas. It's the power user's delight, offering a premium lane on the AI highway. 🛣️
+- *VIP* 🔥: Got grander ambitions? {prices[SubscriptionType.VIP]} unlocks deeper dialogues, more complex image creation, and access to a wider array of digital personas. It's the power user's delight, offering a premium lane on the AI highway 🛣️
 
 - *Platinum* 💎: For the connoisseurs, {prices[SubscriptionType.PLATINUM]} grants you the keys to the AI kingdom! Max out on ChatGPT 4 prompts, create thematic chat rooms, and get exclusive access to the latest AI innovations. It's all you can AI, and then some! 🍽️
 
@@ -541,14 +545,14 @@ Please select the subscription period by clicking on the button:
 
 Welcome to the shop zone, where each button tap unlocks a world of AI wonders!
 🧠 *ChatGPT3 & ChatGPT4*: Engage in deep, thought-provoking conversations. Your new AI buddies await!
-🎨 *DALLE-3 Magic*: Transform ideas into stunning visuals. It's like painting with AI!
-👤 *Face Swap Fun*: Play with identities in images. It's never been this exciting!
+🎨 *DALLE-3*: Transform ideas into stunning visuals. It's like painting with AI!
+👤 *Face Swap*: Play with identities in images. It's never been this exciting!
 🗣️ *Voice Messages*: Say it out loud! Chatting with AI has never sounded better.
 💬 *Thematic Chats*: Dive into specialized topics and explore dedicated chat realms.
 🎭 *Role Catalog Access*: Need a specific assistant? Browse our collection and find your perfect AI match.
 ⚡ *Quick Messages*: Fast, efficient, and always on point. AI communication at lightning speed.
 
-Hit a button and embark on an extraordinary journey with AI! It's time to redefine what's possible. 🌌🛍️
+Hit a button and embark on an extraordinary journey with AI! It's time to redefine what's possible 🌌🛍️
 """
 
     @staticmethod
@@ -556,7 +560,7 @@ Hit a button and embark on an extraordinary journey with AI! It's time to redefi
         return f"""
 🚀 Fantastic!
 
-You've selected the *{package_type}* package
+You've selected the *{package_type}* package.
 🌟 Please *type in the number of requests* you'd like to go for
 """
 

@@ -54,7 +54,6 @@ async def main():
     application.add_handler(CommandHandler("subscribe", subscribe))
     application.add_handler(CommandHandler("buy", buy))
     application.add_handler(CommandHandler("promo_code", promo_code))
-    application.add_handler(CommandHandler("create_promo_code", create_promo_code))
     application.add_handler(PreCheckoutQueryHandler(pre_checkout))
     application.add_handler(MessageHandler(filters.SUCCESSFUL_PAYMENT, successful))
 
@@ -63,6 +62,7 @@ async def main():
     application.add_handler(CommandHandler("chats", chats))
 
     # Admin
+    application.add_handler(CommandHandler("create_promo_code", create_promo_code))
     application.add_handler(CommandHandler("statistics", statistics))
 
     # Common
