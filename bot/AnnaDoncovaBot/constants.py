@@ -1,0 +1,1 @@
+PARSE_MODE = 'HTML'

@@ -16,8 +16,20 @@ __pycache__/
 *.log
 *.tmp
 
+# Media files (if you have an uploads directory or similar)
+media/
+
+# Static files
+static/
+
+# dependencies
+/node_modules
+
+# production
+/build
+
 # misc
-.idea
+../.idea
 .DS_Store
 .DS_Store?
 ._*
@@ -27,3 +39,13 @@ __pycache__/
 # Virtual environment (commonly "venv" or ".venv")
 venv/
 env/
+.env
+.env.testing
+.env.production
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+AnnaDoncovaBot/settings.py
+service_account_key*.json

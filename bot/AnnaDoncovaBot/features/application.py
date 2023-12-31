@@ -1,19 +1,8 @@
 from typing import List, Optional
-from datetime import datetime, timezone
+from datetime import datetime
 
-from app.firebase import db
-from app.models.application import Application
-
-
-async def write_application(name: str, phone: str, email: str, activities: List[str], type: str):
-    await db.collection('applications').document().set({
-        'name': name,
-        'phone': phone,
-        'email': email,
-        'activities': activities,
-        'type': type,
-        'created_date': datetime.now(timezone.utc),
-    })
+from AnnaDoncovaBot.firebase import db
+from AnnaDoncovaBot.models.application import Application
 
 
 async def get_applications(start_date: Optional[datetime] = None,

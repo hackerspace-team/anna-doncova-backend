@@ -1,0 +1,5 @@
+aiohttp==3.7.4
+firebase-admin==6.2.0
+nest-asyncio==1.5.8
+python-dotenv==1.0.0
+python-telegram-bot==20.7
