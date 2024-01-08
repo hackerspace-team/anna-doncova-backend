@@ -1,5 +1,6 @@
 import logging
 import os
+from contextlib import asynccontextmanager
 
 import uvicorn
 from fastapi import FastAPI
@@ -14,18 +15,22 @@ from AnnaDoncovaBot.handlers.common_handler import common_router
 WEBHOOK_PATH = f"/bot/{config.BOT_TOKEN.get_secret_value()}"
 WEBHOOK_URL = config.WEBHOOK_URL + WEBHOOK_PATH
 
-app = FastAPI()
 bot = Bot(token=config.BOT_TOKEN.get_secret_value(), parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage(), sm_strategy=FSMStrategy.GLOBAL_USER)
 
 
-@app.on_event("startup")
-async def on_startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     webhook_info = await bot.get_webhook_info()
     if webhook_info.url != WEBHOOK_URL:
         await bot.set_webhook(url=WEBHOOK_URL)
 
     dp.include_router(common_router)
+    yield
+    await bot.session.close()
+
+
+app = FastAPI(lifespan=lifespan)
 
 
 @app.post(WEBHOOK_PATH)
@@ -35,12 +40,6 @@ async def bot_webhook(update: dict):
         await dp.feed_update(bot=bot, update=telegram_update)
     except Exception as e:
         logging.exception(f"Error in bot_webhook: {e}")
-
-
-@app.on_event("shutdown")
-async def on_shutdown():
-    await bot.delete_webhook()
-    await bot.session.close()
 
 
 if __name__ == "__main__":
