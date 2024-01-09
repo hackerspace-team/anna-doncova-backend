@@ -7,4 +7,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-CMD ["gunicorn", "AnnaDoncovaBackend.wsgi:application", "--bind", "0.0.0.0:8080"]
+ENV ENVIRONMENT=production
+CMD ["uvicorn", "AnnaDoncovaBackend.asgi:application", "--host", "0.0.0.0", "--port", "8080"]
