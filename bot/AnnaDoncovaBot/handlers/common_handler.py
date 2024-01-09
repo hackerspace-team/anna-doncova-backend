@@ -22,6 +22,7 @@ async def applications(message: Message):
                     f"👤 Имя: {application.name}\n"
                     f"📞 Телефон: {application.phone}\n"
                     f"📧 Почта: {application.email}\n"
+                    f"✈️ Телеграм: {application.telegram if application.telegram else 'Не указан'}\n"
                     f"🧠 Деятельность: {'Не указана' if len(application.activities) == 0 else ', '.join(application.activities)}\n\n"
                     f"📄 Форма: Предзапись\n"
                     f"🗓 Дата заполнения: {application.created_date.strftime('%d.%m.%Y %H:%M')}")

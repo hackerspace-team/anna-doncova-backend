@@ -15,4 +15,15 @@ async def get_applications(start_date: Optional[datetime] = None,
         applications_query = applications_query.where("created_date", "<=", end_date)
 
     applications = applications_query.stream()
-    return [Application(**application.to_dict()) async for application in applications]
+    return [
+        Application(
+            id=application.to_dict().get('id', None),
+            name=application.to_dict().get('name', None),
+            phone=application.to_dict().get('phone', None),
+            email=application.to_dict().get('email', None),
+            telegram=application.to_dict().get('telegram', None),
+            activities=application.to_dict().get('activities', None),
+            type=application.to_dict().get('type', None),
+            created_date=application.to_dict().get('created_date', None)
+        ) async for application in applications
+    ]

@@ -10,6 +10,6 @@ class PreRegisterSerializer(Serializer):
     # Example: me@romandanilov.com
     email = serializers.EmailField()
     # Example: @roman_danilov
-    telegram = serializers.CharField(required=False, min_length=6, max_length=33)
+    telegram = serializers.CharField(min_length=6, max_length=33)
     # Example: ['Контент-менеджер', 'Дизайнер']
     activities = serializers.ListField(child=serializers.CharField())

@@ -12,6 +12,7 @@ class Application:
     name: str
     phone: str
     email: str
+    telegram: str
     activities: List[str]
     type: ApplicationType
     created_date: datetime
@@ -21,6 +22,7 @@ class Application:
                  name: str,
                  phone: str,
                  email: str,
+                 telegram: str,
                  activities: List[str],
                  type: ApplicationType,
                  created_date=None):
@@ -28,6 +30,7 @@ class Application:
         self.name = name
         self.phone = phone
         self.email = email
+        self.telegram = telegram
         self.activities = activities
         self.type = type
 
@@ -40,6 +43,7 @@ class Application:
             'name': self.name,
             'phone': self.phone,
             'email': self.email,
+            'telegram': self.telegram,
             'activities': self.activities,
             'type': self.type,
             'created_date': self.created_date,

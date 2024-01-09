@@ -17,17 +17,26 @@ class PreRegisterView(APIView):
             serializer.is_valid(raise_exception=True)
 
             data = serializer.validated_data
-            name, phone, email, activities = data['name'], data['phone'], data['email'], data['activities']
+            (name,
+             phone,
+             email,
+             telegram,
+             activities) = (data['name'],
+                            data['phone'],
+                            data['email'],
+                            data['telegram'],
+                            data['activities'])
 
             message = (f"#application\n\n"
                        f"🚀 <b>Новый клиент на курсах по нейросетям!</b>\n\n"
                        f"👤 Имя: {name}\n"
                        f"📞 Телефон: {phone}\n"
                        f"📧 Почта: {email}\n"
+                       f"✈️ Телеграм: {telegram if telegram else 'Не указан'}\n"
                        f"🧠 Деятельность: {'Не указана' if len(activities) == 0 else ', '.join(activities)}\n\n"
                        f"📄 Форма: Предзапись")
             await send_message_to_admins(message)
-            await write_application(name, phone, email, activities, ApplicationType.PRE_REGISTER)
+            await write_application(name, phone, email, telegram, activities, ApplicationType.PRE_REGISTER)
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as error:
