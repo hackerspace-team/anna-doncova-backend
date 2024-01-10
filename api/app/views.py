@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from adrf.views import APIView
 from rest_framework import status
@@ -24,7 +25,7 @@ class PreRegisterView(APIView):
              activities) = (data['name'],
                             data['phone'],
                             data['email'],
-                            data['telegram'],
+                            data.get('telegram'),
                             data['activities'])
 
             message = (f"#application\n\n"
@@ -40,5 +41,6 @@ class PreRegisterView(APIView):
 
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         except Exception as error:
-            logging.error(error)
+            error_trace = traceback.format_exc()
+            logging.error(error, error_trace)
             return Response({'error': 'Internal Server Error'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
