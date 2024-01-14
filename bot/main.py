@@ -2,18 +2,27 @@ import logging
 import os
 from contextlib import asynccontextmanager
 
+import pytz
 import uvicorn
 from fastapi import FastAPI
 from aiogram import Bot, Dispatcher, types
 from aiogram.enums.parse_mode import ParseMode
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.fsm.strategy import FSMStrategy
+from yookassa.domain.notification import WebhookNotification
 
 from AnnaDoncovaBot.config import config
+from AnnaDoncovaBot.features.enrollment import get_enrollment_by_payment_id, update_enrollment
 from AnnaDoncovaBot.handlers.common_handler import common_router
+from AnnaDoncovaBot.helpers.send_chat_action_to_admins import send_chat_action_to_admins
+from AnnaDoncovaBot.helpers.send_message_to_admins import send_message_to_admins
+from AnnaDoncovaBot.models.enrollment import PaymentType, PaymentStatus
 
-WEBHOOK_PATH = f"/bot/{config.BOT_TOKEN.get_secret_value()}"
-WEBHOOK_URL = config.WEBHOOK_URL + WEBHOOK_PATH
+BOT_WEBHOOK_PATH = f"/bot/{config.BOT_TOKEN.get_secret_value()}"
+BOT_WEBHOOK_URL = config.SERVER_URL + BOT_WEBHOOK_PATH
+
+YOOKASSA_WEBHOOK_PATH = "/payment/yookassa"
+YOOKASSA_WEBHOOK_URL = config.SERVER_URL + YOOKASSA_WEBHOOK_PATH
 
 bot = Bot(token=config.BOT_TOKEN.get_secret_value(), parse_mode=ParseMode.HTML)
 dp = Dispatcher(storage=MemoryStorage(), sm_strategy=FSMStrategy.GLOBAL_USER)
@@ -22,8 +31,8 @@ dp = Dispatcher(storage=MemoryStorage(), sm_strategy=FSMStrategy.GLOBAL_USER)
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     webhook_info = await bot.get_webhook_info()
-    if webhook_info.url != WEBHOOK_URL:
-        await bot.set_webhook(url=WEBHOOK_URL)
+    if webhook_info.url != BOT_WEBHOOK_URL:
+        await bot.set_webhook(url=BOT_WEBHOOK_URL)
 
     dp.include_router(common_router)
     yield
@@ -33,13 +42,81 @@ async def lifespan(_: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-@app.post(WEBHOOK_PATH)
+@app.post(BOT_WEBHOOK_PATH)
 async def bot_webhook(update: dict):
     try:
         telegram_update = types.Update(**update)
         await dp.feed_update(bot=bot, update=telegram_update)
     except Exception as e:
         logging.exception(f"Error in bot_webhook: {e}")
+
+
+@app.post(YOOKASSA_WEBHOOK_PATH)
+async def yookassa_webhook(request: dict):
+    try:
+        notification_object = WebhookNotification(request)
+        payment = notification_object.object
+
+        await send_chat_action_to_admins(bot)
+
+        enrollment = await get_enrollment_by_payment_id(payment.id)
+        if enrollment:
+            created_at_pst = (enrollment.created_date
+                              .astimezone(pytz.timezone('America/Los_Angeles'))
+                              .strftime('%d.%m.%Y %H:%M'))
+            if payment.status == 'succeeded':
+                text = (f"#payment #succeeded\n\n"
+                        f"💰 <b>Оплата курса по нейросетям!</b>\n\n"
+                        f"ℹ️ ID: {enrollment.id}\n"
+                        f"👤 Имя: {enrollment.name}\n"
+                        f"📞 Телефон: {enrollment.phone}\n"
+                        f"📧 Почта: {enrollment.email}\n"
+                        f"✈️ Телеграм: {enrollment.telegram if enrollment.telegram else 'Не указан'}\n"
+                        f"🧠 Деятельность: {enrollment.activity if enrollment.activity else 'Не указана'}\n"
+                        f"⭐ Тариф: {enrollment.tariff}\n"
+                        f"🏦 Предоплата: {'Да' if enrollment.payment_type == PaymentType.PREPAYMENT else 'Нет'}\n"
+                        f"💱 Метод оплаты: ЮKassa\n"
+                        f"💸 Сумма: {enrollment.amount}₽\n"
+                        f"🤑 Чистая сумма: {payment.income_amount.value}₽\n"
+                        f"👁 Статус: Оплачен\n"
+                        f"🗓 Дата заполнения по PST: {created_at_pst}")
+                await send_message_to_admins(bot, text)
+
+                await update_enrollment(enrollment.id, {
+                    "payment_status": PaymentStatus.SUCCEEDED,
+                    "income_amount": float(payment.income_amount.value),
+                })
+            elif payment.status == 'canceled':
+                text = (f"#payment #canceled\n\n"
+                        f"❌ <b>Отмена оплаты курса по нейросетям!</b>\n\n"
+                        f"ℹ️ ID: {enrollment.id}\n"
+                        f"👤 Имя: {enrollment.name}\n"
+                        f"📞 Телефон: {enrollment.phone}\n"
+                        f"📧 Почта: {enrollment.email}\n"
+                        f"✈️ Телеграм: {enrollment.telegram if enrollment.telegram else 'Не указан'}\n"
+                        f"🧠 Деятельность: {enrollment.activity if enrollment.activity else 'Не указана'}\n"
+                        f"⭐ Тариф: {enrollment.tariff}\n"
+                        f"🏦 Предоплата: {'Да' if enrollment.payment_type == PaymentType.PREPAYMENT else 'Нет'}\n"
+                        f"💱 Метод оплаты: ЮKassa\n"
+                        f"💸 Сумма: {enrollment.amount}₽\n"
+                        f"👁 Статус: Отменён\n"
+                        f"🗓 Дата заполнения по PST: {created_at_pst}")
+                await send_message_to_admins(bot, text)
+
+                await update_enrollment(enrollment.id, {
+                    "payment_status": PaymentStatus.CANCELED,
+                    "income_amount": float(0),
+                })
+            else:
+                text = (f"#error\n\n"
+                        f"🚫 <b>Неизвестный статус!</b>\n\n"
+                        f"ℹ️ ID: {enrollment.id}\n"
+                        f"📄 Статус: {payment.status}\n")
+                await send_message_to_admins(bot, text)
+        else:
+            logging.error(f"Error in yookassa_webhook: Didn't find an enrollment with id {payment.id}")
+    except Exception as e:
+        logging.exception(f"Error in yookassa_webhook: {e}")
 
 
 if __name__ == "__main__":

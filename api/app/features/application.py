@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 from app.firebase import db
 
 
-async def write_application(name: str, phone: str, email: str, telegram: str, activities: List[str], type: str):
-    application_ref = db.collection('applications').document()
+async def write_application(id: str, name: str, phone: str, email: str, telegram: str, activities: List[str]):
+    application_ref = db.collection('applications').document(id)
     await application_ref.set({
         'id': application_ref.id,
         'name': name,
@@ -13,6 +13,5 @@ async def write_application(name: str, phone: str, email: str, telegram: str, ac
         'email': email,
         'telegram': telegram,
         'activities': activities,
-        'type': type,
         'created_date': datetime.now(timezone.utc),
     })
