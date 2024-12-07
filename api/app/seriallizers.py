@@ -36,3 +36,16 @@ class RegisterSerializer(Serializer):
     payment_method = serializers.ChoiceField([PaymentMethod.YOOKASSA, PaymentMethod.PAYPAL])
     # Example: FULL_PAYMENT
     payment_type = serializers.ChoiceField([PaymentType.PREPAYMENT, PaymentType.FULL_PAYMENT])
+
+
+class MiniCourseSerializer(Serializer):
+    # Example: Roman Danilov
+    name = serializers.CharField(min_length=2, max_length=50)
+    # Example: me@romandanilov.com
+    email = serializers.EmailField()
+    # Example: @roman_danilov
+    telegram = serializers.CharField(required=False, min_length=6, max_length=33)
+    # Example: 3590
+    price = serializers.IntegerField()
+    # Example: YOOKASSA
+    payment_method = serializers.ChoiceField([PaymentMethod.YOOKASSA, PaymentMethod.PAYPAL])

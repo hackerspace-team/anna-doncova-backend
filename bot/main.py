@@ -13,8 +13,10 @@ from yookassa.domain.notification import WebhookNotification
 
 from AnnaDoncovaBot.config import config
 from AnnaDoncovaBot.features.enrollment import get_enrollment_by_payment_id, update_enrollment
+from AnnaDoncovaBot.features.mini_course import get_mini_course_by_payment_id, update_mini_course
 from AnnaDoncovaBot.handlers.common_handler import common_router
 from AnnaDoncovaBot.helpers.send_chat_action_to_admins import send_chat_action_to_admins
+from AnnaDoncovaBot.helpers.send_email import send_email
 from AnnaDoncovaBot.helpers.send_message_to_admins import send_message_to_admins
 from AnnaDoncovaBot.models.enrollment import PaymentType, PaymentStatus
 
@@ -53,12 +55,12 @@ async def bot_webhook(update: dict):
 
 @app.post(YOOKASSA_WEBHOOK_PATH)
 async def yookassa_webhook(request: dict):
+    notification_object = WebhookNotification(request)
+    payment = notification_object.object
+
+    await send_chat_action_to_admins(bot)
+
     try:
-        notification_object = WebhookNotification(request)
-        payment = notification_object.object
-
-        await send_chat_action_to_admins(bot)
-
         enrollment = await get_enrollment_by_payment_id(payment.id)
         if enrollment:
             created_at_pst = (enrollment.created_date
@@ -113,8 +115,59 @@ async def yookassa_webhook(request: dict):
                         f"ℹ️ ID: {enrollment.id}\n"
                         f"📄 Статус: {payment.status}\n")
                 await send_message_to_admins(bot, text)
-        else:
-            logging.error(f"Error in yookassa_webhook: Didn't find an enrollment with id {payment.id}")
+    except Exception as e:
+        logging.exception(f"Error in yookassa_webhook: {e}")
+
+    try:
+        mini_course = await get_mini_course_by_payment_id(payment.id)
+        if mini_course:
+            created_at_pst = (mini_course.created_date
+                              .astimezone(pytz.timezone('America/Los_Angeles'))
+                              .strftime('%d.%m.%Y %H:%M'))
+            if payment.status == 'succeeded':
+                text = (f"#payment #succeeded\n\n"
+                        f"💰 <b>Оплата мини-курса!</b>\n\n"
+                        f"ℹ️ ID: {mini_course.id}\n"
+                        f"👤 Имя: {mini_course.name}\n"
+                        f"📧 Почта: {mini_course.email}\n"
+                        f"✈️ Телеграм: {mini_course.telegram if mini_course.telegram else 'Не указан'}\n"
+                        f"💱 Метод оплаты: ЮKassa\n"
+                        f"💸 Сумма: {mini_course.amount}₽\n"
+                        f"🤑 Чистая сумма: {payment.income_amount.value}₽\n"
+                        f"👁 Статус: Оплачен\n"
+                        f"🗓 Дата заполнения по PST: {created_at_pst}")
+
+                await send_email(mini_course.name, mini_course.email)
+
+                await send_message_to_admins(bot, text)
+
+                await update_mini_course(mini_course.id, {
+                    "payment_status": PaymentStatus.SUCCEEDED,
+                    "income_amount": float(payment.income_amount.value),
+                })
+            elif payment.status == 'canceled':
+                text = (f"#payment #canceled\n\n"
+                        f"❌ <b>Отмена оплаты мини-курса!</b>\n\n"
+                        f"ℹ️ ID: {mini_course.id}\n"
+                        f"👤 Имя: {mini_course.name}\n"
+                        f"📧 Почта: {mini_course.email}\n"
+                        f"✈️ Телеграм: {mini_course.telegram if mini_course.telegram else 'Не указан'}\n"
+                        f"💱 Метод оплаты: ЮKassa\n"
+                        f"💸 Сумма: {mini_course.amount}₽\n"
+                        f"👁 Статус: Отменён\n"
+                        f"🗓 Дата заполнения по PST: {created_at_pst}")
+                await send_message_to_admins(bot, text)
+
+                await update_mini_course(mini_course.id, {
+                    "payment_status": PaymentStatus.CANCELED,
+                    "income_amount": float(0),
+                })
+            else:
+                text = (f"#error\n\n"
+                        f"🚫 <b>Неизвестный статус оплаты для мини-курса!</b>\n\n"
+                        f"ℹ️ ID: {mini_course.id}\n"
+                        f"📄 Статус: {payment.status}\n")
+                await send_message_to_admins(bot, text)
     except Exception as e:
         logging.exception(f"Error in yookassa_webhook: {e}")
 
